@@ -3,6 +3,7 @@ package com.yfdl.entity;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -46,6 +47,12 @@ public class ArticleEntity implements Serializable {
      * 所属分类id
      */
     private Long categoryId;
+
+    /**
+     * 分类名，表中不存在
+     */
+    @TableField(exist = false)
+    private String categoryName;
 
     /**
      * 缩略图

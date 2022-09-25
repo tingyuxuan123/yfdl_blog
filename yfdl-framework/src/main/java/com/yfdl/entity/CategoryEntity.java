@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
@@ -19,6 +20,7 @@ import lombok.Data;
  */
 @Data
 @NoArgsConstructor
+//@JsonInclude(JsonInclude.Include.NON_NULL)  //为空的值不返回
 @TableName("sg_category")
 public class CategoryEntity implements Serializable {
     private static final long serialVersionUID = 722192142938454809L;

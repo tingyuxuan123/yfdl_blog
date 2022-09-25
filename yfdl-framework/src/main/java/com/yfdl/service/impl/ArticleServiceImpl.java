@@ -6,16 +6,23 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.yfdl.common.R;
 import com.yfdl.constants.SystemConstants;
+import com.yfdl.entity.CategoryEntity;
 import com.yfdl.service.ArticleService;
 import com.yfdl.mapper.ArticleMapper;
 import com.yfdl.entity.ArticleEntity;
+import com.yfdl.service.CategoryService;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.vo.ArticleListVo;
 import com.yfdl.vo.HotArticleVo;
+import com.yfdl.vo.PageVo;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 文章表(Article)表服务实现类
@@ -25,6 +32,10 @@ import java.util.List;
  */
 @Service
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity> implements ArticleService {
+
+    @Autowired
+    private CategoryService categoryService;
+
     @Override
     public R<List<ArticleEntity>> hotArticleList() {
 
@@ -47,4 +58,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         return R.successResult(hotArticleVos);
     }
+
+    @Override
+    public R<PageVo<ArticleListVo>> articleList(Long categoryId, Long currentPage, Long pageSize) {
+
+        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<ArticleEntity>();
+        queryWrapper.eq(ArticleEntity::getStatus,SystemConstants.ARTICLE_STATUS_NORMAL);
+        queryWrapper.eq(Objects.nonNull(categoryId)&&categoryId>0,ArticleEntity::getCategoryId,categoryId);
+        queryWrapper.orderByDesc(ArticleEntity::getIsTop);
+        Page<ArticleEntity> articleEntityPage = new Page<>(currentPage,pageSize);
+        page(articleEntityPage,queryWrapper); //查询结果会存入articleEntityPage
+
+        List<ArticleEntity> articleEntities = articleEntityPage.getRecords();
+
+        //获取分类id对应的分类名称
+         articleEntities= articleEntities.stream().peek(articleEntity -> {
+            CategoryEntity categoryEntity = categoryService.getById(articleEntity.getCategoryId());
+            String name = categoryEntity.getName();
+            articleEntity.setCategoryName(name);
+        }).collect(Collectors.toList());
+
+
+        List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articleEntities, ArticleListVo.class);
+
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
+
+        return R.successResult(articleListVoPageVo);
+    }
+
+
 }
