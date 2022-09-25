@@ -22,4 +22,18 @@ public class SystemConstants {
      */
     public static final char CATEGORY_STATUS_DISABLE = '1';
 
+    /**
+     * 友连状态为审核通过
+     */
+    public static final char LINK_STATUS_NORMAL = '0';
+
+    /**
+     * 友连状态为未通过
+     */
+    public static final char LINK_STATUS_NOTNORMAL = '1';
+
+    /**
+     * 友链待审核
+     */
+    public static final char LINK_STATUS_WAIT ='2';
 }
