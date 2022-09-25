@@ -13,6 +13,7 @@ import com.yfdl.entity.ArticleEntity;
 import com.yfdl.service.CategoryService;
 import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.vo.ArticleListVo;
+import com.yfdl.vo.ArticleVo;
 import com.yfdl.vo.HotArticleVo;
 import com.yfdl.vo.PageVo;
 import org.springframework.beans.BeanUtils;
@@ -85,6 +86,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
 
         return R.successResult(articleListVoPageVo);
+    }
+
+    @Override
+    public R<ArticleVo> article(Long id) {
+
+        ArticleEntity articleEntity = getById(id);
+
+        CategoryEntity category = categoryService.getById(articleEntity.getCategoryId());
+        articleEntity.setCategoryName(category.getName());
+
+        ArticleVo articleVo = BeanCopyUtils.copyBean(articleEntity, ArticleVo.class);
+
+        return R.successResult(articleVo);
     }
 
 

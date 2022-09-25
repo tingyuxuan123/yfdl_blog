@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.yfdl.common.R;
 import com.yfdl.entity.ArticleEntity;
 import com.yfdl.vo.ArticleListVo;
+import com.yfdl.vo.ArticleVo;
 import com.yfdl.vo.PageVo;
 
 import java.util.List;
@@ -19,4 +20,7 @@ public interface ArticleService extends IService<ArticleEntity> {
 
 
     R<PageVo<ArticleListVo>> articleList(Long categoryId, Long currentPage, Long pageSize);
+
+    R<ArticleVo> article(Long id);
+
 }
