@@ -12,16 +12,16 @@ import lombok.NoArgsConstructor;
 import lombok.Data;
 
 /**
- * 用户表(SysUser)表实体类
+ * 用户表(User)表实体类
  *
  * @author makejava
- * @since 2022-09-25 19:18:32
+ * @since 2022-09-25 19:28:22
  */
 @Data
 @NoArgsConstructor
-@TableName("sys_user")
-public class SysUserEntity implements Serializable {
-    private static final long serialVersionUID = 684718472033104622L;
+@TableName("user")
+public class UserEntity implements Serializable {
+    private static final long serialVersionUID = 409703452429747431L;
 
 
     /**
