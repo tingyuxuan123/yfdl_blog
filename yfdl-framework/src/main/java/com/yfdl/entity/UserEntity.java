@@ -19,7 +19,7 @@ import lombok.Data;
  */
 @Data
 @NoArgsConstructor
-@TableName("user")
+@TableName("sys_user")
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 409703452429747431L;
 
