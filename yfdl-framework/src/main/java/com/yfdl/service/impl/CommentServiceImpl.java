@@ -3,7 +3,9 @@ package com.yfdl.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
+import com.yfdl.common.SystemException;
 import com.yfdl.service.CommentService;
 import com.yfdl.mapper.CommentMapper;
 import com.yfdl.entity.CommentEntity;
@@ -11,11 +13,13 @@ import com.yfdl.service.UserService;
 import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.vo.CommentVo;
 import com.yfdl.vo.PageVo;
+import io.jsonwebtoken.lang.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 评论表(Comment)表服务实现类
@@ -30,13 +34,15 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, CommentEntity
     private UserService userService;
 
     @Override
-    public R commentList(Long pageNum, Long pageSize, Long articleId) {
+    public R commentList(char commentType, Long pageNum, Long pageSize, Long articleId) {
 
         Page<CommentEntity> commentEntityPage = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<CommentEntity> commentEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        commentEntityLambdaQueryWrapper.eq(CommentEntity::getArticleId,articleId);
+        commentEntityLambdaQueryWrapper.eq(!Objects.isNull(articleId),CommentEntity::getArticleId,articleId);
         // -1 代表根评论
         commentEntityLambdaQueryWrapper.eq(CommentEntity::getRootId,-1);
+
+        commentEntityLambdaQueryWrapper.eq(CommentEntity::getType,commentType);
 
         page(commentEntityPage,commentEntityLambdaQueryWrapper);
         List<CommentEntity> commentList = commentEntityPage.getRecords();
@@ -81,6 +87,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, CommentEntity
         });
 
 }
+
+
+
+    @Override
+    public R comment(CommentEntity commentEntity) {
+        if(!Strings.hasText(commentEntity.getContent())){
+            throw new SystemException(AppHttpCodeEnum.CONTENT_NOT_NULL);
+        }
+
+        save(commentEntity);
+
+
+        return R.successResult();
+    }
 
 }
 

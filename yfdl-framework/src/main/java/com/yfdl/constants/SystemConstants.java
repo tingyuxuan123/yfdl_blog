@@ -36,4 +36,17 @@ public class SystemConstants {
      * 友链待审核
      */
     public static final char LINK_STATUS_WAIT ='2';
+
+    /**
+     *  评论类型： 友链
+     */
+    public static final char LINK_COMMENT = '1';
+
+    /**
+     * 评论类型:文章
+     */
+
+    public static final char ARTICLE_COMMENT ='0';
+
+
 }

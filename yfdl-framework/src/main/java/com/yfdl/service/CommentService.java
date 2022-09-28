@@ -11,5 +11,7 @@ import com.yfdl.entity.CommentEntity;
  * @since 2022-09-28 13:45:57
  */
 public interface CommentService extends IService<CommentEntity> {
-    R commentList(Long pageNum, Long pageSize, Long articleId);
+    R commentList(char commentType, Long pageNum, Long pageSize,Long articleId);
+
+    R comment(CommentEntity commentEntity);
 }
