@@ -14,7 +14,14 @@ public enum AppHttpCodeEnum {
     REQUIRE_PASSWORD(504,"必需填写密码"),
     LOGIN_ERROR(505,"用户名或密码错误"),
 
-    CONTENT_NOT_NULL(506,"评论不能为空");
+    CONTENT_NOT_NULL(506,"评论不能为空"),
+    FILE_TYPE_ERROE(507,"图片类型不支持"),
+    NICKNAME_NOT_NULL(508,"昵称不能为空"),
+    USERNAME_NOT_NULL(509,"用户名不能为空"),
+    EMAIL_NOT_NULL(510,"邮箱不能为空"),
+    PASSWORD_NOT_NULL(511,"密码不能为空"),
+    NICKNAME_EXIST(512, "昵称已存在"),
+    ;
 
 
     int code;
