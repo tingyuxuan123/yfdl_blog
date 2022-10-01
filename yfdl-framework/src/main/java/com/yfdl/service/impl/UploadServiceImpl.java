@@ -11,13 +11,11 @@ import com.qiniu.util.Auth;
 import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
-import com.yfdl.config.OssConfig;
+import com.yfdl.common.config.OssConfig;
 import com.yfdl.service.UploadService;
 import com.yfdl.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

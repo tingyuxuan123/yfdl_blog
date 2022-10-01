@@ -41,12 +41,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     @Override
     public R updateUserInfo(UserEntity user) {
-
         boolean b = updateById(user);
-
-
         return R.successResult();
-
 
     }
 

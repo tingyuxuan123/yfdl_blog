@@ -1,5 +1,6 @@
 package com.yfdl.controller;
 
+import com.yfdl.annotation.SystemLog;
 import com.yfdl.common.R;
 import com.yfdl.entity.CategoryEntity;
 import com.yfdl.service.CategoryService;
@@ -22,6 +23,7 @@ public class CategoryController {
      * 获取分类
      * @return
      */
+    @SystemLog(businessName = "获取分类列表")
     @GetMapping("getCategoryList")
     public R<List<CategoryListVo>> getCategoryList(){
         return categoryService.getCategoryList();

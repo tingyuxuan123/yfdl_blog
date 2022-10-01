@@ -11,6 +11,7 @@ import com.yfdl.mapper.ArticleMapper;
 import com.yfdl.entity.ArticleEntity;
 import com.yfdl.service.CategoryService;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.utils.RedisCache;
 import com.yfdl.vo.ArticleListVo;
 import com.yfdl.vo.ArticleVo;
 import com.yfdl.vo.HotArticleVo;
@@ -33,6 +34,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public R<List<ArticleEntity>> hotArticleList() {
@@ -74,6 +78,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             CategoryEntity categoryEntity = categoryService.getById(articleEntity.getCategoryId());
             String name = categoryEntity.getName();
             articleEntity.setCategoryName(name);
+            //获取观看量
+             Integer viewCount = redisCache.getCacheMapValue("article:viewCount", articleEntity.getId().toString());
+             articleEntity.setViewCount(viewCount.longValue());
+
         }).collect(Collectors.toList());
 
 
@@ -93,9 +101,21 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         CategoryEntity category = categoryService.getById(articleEntity.getCategoryId());
         articleEntity.setCategoryName(category.getName());
 
+        Integer viewCount = redisCache.getCacheMapValue("article:viewCount", id.toString());
+        articleEntity.setViewCount(viewCount.longValue());
+
         ArticleVo articleVo = BeanCopyUtils.copyBean(articleEntity, ArticleVo.class);
 
         return R.successResult(articleVo);
+    }
+
+    @Override
+    public R updateViewCount(Long id) {
+        //浏览量加1
+        redisCache.incrementCacheMapValue("article:viewCount",id.toString(),1);
+        return R.successResult();
+
+
     }
 
 

@@ -1,4 +1,4 @@
-package com.yfdl.config;
+package com.yfdl.common.config;
 
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;

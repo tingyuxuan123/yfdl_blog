@@ -23,4 +23,5 @@ public interface ArticleService extends IService<ArticleEntity> {
 
     R<ArticleVo> article(Long id);
 
+    R updateViewCount(Long id);
 }

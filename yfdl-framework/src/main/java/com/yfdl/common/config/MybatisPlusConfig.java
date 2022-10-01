@@ -1,4 +1,4 @@
-package com.yfdl.config;
+package com.yfdl.common.config;
 
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;

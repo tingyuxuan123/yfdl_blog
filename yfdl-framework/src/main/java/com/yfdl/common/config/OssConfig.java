@@ -1,4 +1,4 @@
-package com.yfdl.config;
+package com.yfdl.common.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

@@ -1,5 +1,6 @@
 package com.yfdl.controller;
 
+import com.yfdl.annotation.SystemLog;
 import com.yfdl.common.R;
 import com.yfdl.entity.ArticleEntity;
 import com.yfdl.service.ArticleService;
@@ -42,8 +43,11 @@ public class ArticleController {
         return articleService.article(id);
     }
 
-
-
+    @SystemLog(businessName = "更新文章观看次数")
+    @PutMapping("updateViewCount/{id}")
+    public R updateViewCount(@PathVariable Long id){
+        return articleService.updateViewCount(id);
+    }
 
 
 }
