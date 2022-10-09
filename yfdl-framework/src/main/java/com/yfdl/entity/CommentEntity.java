@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
@@ -15,6 +17,7 @@ import lombok.Data;
  * @author makejava
  * @since 2022-09-28 13:45:57
  */
+@ApiModel(description = "评论的实体类")
 @Data
 @NoArgsConstructor
 @TableName("sg_comment")
@@ -28,11 +31,13 @@ public class CommentEntity implements Serializable {
     /**
      * 评论类型（0代表文章评论，1代表友链评论）
      */
+    @ApiModelProperty(notes = "评论类型（0代表文章评论，1代表友链评论）")
     private String type;
 
     /**
      * 文章id
      */
+    @ApiModelProperty(notes = "文章id")
     private Long articleId;
 
     /**

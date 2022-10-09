@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class ArticleVo {
@@ -40,11 +41,27 @@ public class ArticleVo {
      */
     private String thumbnail;
 
+    /**
+     * 标签
+     */
+
+    private List<TagListVo> tags;
 
     /**
      * 访问量
      */
     private Long viewCount;
+
+    /**
+     * 是否置顶
+     */
+    private String isTop;
+
+
+    /**
+     * 状态
+     */
+    private String status;
 
     /**
      * 是否允许评论 1是，0否

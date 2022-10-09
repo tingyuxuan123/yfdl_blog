@@ -5,19 +5,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.R;
 import com.yfdl.constants.SystemConstants;
-import com.yfdl.entity.CategoryEntity;
-import com.yfdl.service.ArticleService;
+import com.yfdl.dto.ArticleDetailDto;
+import com.yfdl.entity.*;
+import com.yfdl.service.*;
 import com.yfdl.mapper.ArticleMapper;
-import com.yfdl.entity.ArticleEntity;
-import com.yfdl.service.CategoryService;
 import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.utils.RedisCache;
-import com.yfdl.vo.ArticleListVo;
-import com.yfdl.vo.ArticleVo;
-import com.yfdl.vo.HotArticleVo;
-import com.yfdl.vo.PageVo;
+import com.yfdl.utils.SecurityUtils;
+import com.yfdl.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +37,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Autowired
     private RedisCache redisCache;
 
+    @Autowired
+    private CommentService commentService;
+
+    @Autowired
+    private ArticleTagService articleTagService;
+
+    @Autowired
+    private TagService tagService;
+
+    @Autowired
+    private UserRoleService userRoleService;
+
     @Override
     public R<List<ArticleEntity>> hotArticleList() {
 
@@ -49,23 +60,29 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         Page<ArticleEntity> page = page(articleEntityPage, queryWrapper);
 
         List<ArticleEntity> articles=page.getRecords();
-//        List<HotArticleVo> hotArticleVos =new ArrayList<>();
-//        for (ArticleEntity article : articles) {
-//            HotArticleVo hotArticleVo = new HotArticleVo();
-//            BeanUtils.copyProperties(article,hotArticleVo);
-//            hotArticleVos.add(hotArticleVo);
-//        }
-        List<HotArticleVo> hotArticleVos = BeanCopyUtils.copyBeanList(articles, HotArticleVo.class);
 
+        List<HotArticleVo> hotArticleVos = BeanCopyUtils.copyBeanList(articles, HotArticleVo.class);
 
         return R.successResult(hotArticleVos);
     }
 
     @Override
-    public R<PageVo<ArticleListVo>> articleList(Long categoryId, Long currentPage, Long pageSize) {
+    public R<PageVo<ArticleListVo>> articleList(String title,Character status,Long categoryId,Long spanId, Long currentPage, Long pageSize) {
 
         LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<ArticleEntity>();
-        queryWrapper.eq(ArticleEntity::getStatus,SystemConstants.ARTICLE_STATUS_NORMAL);
+        if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为按传输的值搜索
+            queryWrapper.eq(ArticleEntity::getStatus,status);
+        }
+        queryWrapper.like(Objects.nonNull(title),ArticleEntity::getTitle,title);
+        
+        if(Objects.nonNull(spanId) && spanId>0){
+            LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            LambdaQueryWrapper<ArticleTagEntity> eq = articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getTagId,spanId);
+            List<Long> articleIds = articleTagService.list(eq).stream().map(ArticleTagEntity::getArticleId).collect(Collectors.toList());
+            queryWrapper.in(ArticleEntity::getId,articleIds);
+        }
+
+
         queryWrapper.eq(Objects.nonNull(categoryId)&&categoryId>0,ArticleEntity::getCategoryId,categoryId);
         queryWrapper.orderByDesc(ArticleEntity::getIsTop);
         Page<ArticleEntity> articleEntityPage = new Page<>(currentPage,pageSize);
@@ -80,17 +97,57 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             articleEntity.setCategoryName(name);
             //获取观看量
              Integer viewCount = redisCache.getCacheMapValue("article:viewCount", articleEntity.getId().toString());
-             articleEntity.setViewCount(viewCount.longValue());
+             if(Objects.nonNull(viewCount)){ //如果redis中读取到观看数就设置反之就使用数据库中的
+                 articleEntity.setViewCount(viewCount.longValue());
+             }
+
+
+             //获取评论数
+             LambdaQueryWrapper<CommentEntity> commentEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+             commentEntityLambdaQueryWrapper.eq(CommentEntity::getArticleId,articleEntity.getId());
+             int count = commentService.count(commentEntityLambdaQueryWrapper);
+             articleEntity.setCommentCount((long) count);
 
         }).collect(Collectors.toList());
 
 
         List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articleEntities, ArticleListVo.class);
 
+        articleListVos.stream().forEach(articleListVo -> setTag(articleListVo));
 
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
 
         return R.successResult(articleListVoPageVo);
+    }
+
+    private void setTag(ArticleListVo articleListVo){ //设置对应文章的标签列表
+        LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        //根据文章id,获取标签id
+        articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getArticleId,articleListVo.getId());
+        List<Long> tagIds = articleTagService.list(articleTagEntityLambdaQueryWrapper).stream()
+                .map(articleTagEntity -> articleTagEntity.getTagId()).collect(Collectors.toList());
+        System.out.println(tagIds);
+        LambdaQueryWrapper<TagEntity> tagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        tagEntityLambdaQueryWrapper.in(tagIds.size()>0,TagEntity::getId,tagIds);
+        List<TagEntity> list = tagService.list(tagEntityLambdaQueryWrapper);
+        List<TagListVo> tagListVos = BeanCopyUtils.copyBeanList(list, TagListVo.class);
+        articleListVo.setTags(tagListVos);
+
+    }
+
+    private void setTag(ArticleVo articleVo){ //设置对应文章的标签列表
+        LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        //根据文章id,获取标签id
+        articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getArticleId,articleVo.getId());
+        List<Long> tagIds = articleTagService.list(articleTagEntityLambdaQueryWrapper).stream()
+                .map(articleTagEntity -> articleTagEntity.getTagId()).collect(Collectors.toList());
+        System.out.println(tagIds);
+        LambdaQueryWrapper<TagEntity> tagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        tagEntityLambdaQueryWrapper.in(tagIds.size()>0,TagEntity::getId,tagIds);
+        List<TagEntity> list = tagService.list(tagEntityLambdaQueryWrapper);
+        List<TagListVo> tagListVos = BeanCopyUtils.copyBeanList(list, TagListVo.class);
+        articleVo.setTags(tagListVos);
+
     }
 
     @Override
@@ -102,9 +159,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         articleEntity.setCategoryName(category.getName());
 
         Integer viewCount = redisCache.getCacheMapValue("article:viewCount", id.toString());
-        articleEntity.setViewCount(viewCount.longValue());
+        if(Objects.nonNull(viewCount)){ //如果redis中读取到观看数就设置反之就使用数据库中的
+            articleEntity.setViewCount(viewCount.longValue());
+        }
 
         ArticleVo articleVo = BeanCopyUtils.copyBean(articleEntity, ArticleVo.class);
+        setTag(articleVo);
 
         return R.successResult(articleVo);
     }
@@ -114,7 +174,121 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         //浏览量加1
         redisCache.incrementCacheMapValue("article:viewCount",id.toString(),1);
         return R.successResult();
+    }
 
+    @Transactional
+    @Override
+    public R updateArticle(@RequestBody ArticleDetailDto articleDetailDto) {
+
+        List<Long> tags = articleDetailDto.getTags();
+
+
+        ArticleEntity articleEntity = BeanCopyUtils.copyBean(articleDetailDto, ArticleEntity.class);
+
+        if(Objects.nonNull(articleDetailDto.getTags()) && articleDetailDto.getTags().size()>0){
+            //移除过时的标签
+            LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getArticleId,articleDetailDto.getId());
+            articleTagService.remove(articleTagEntityLambdaQueryWrapper);
+            //更新标签
+            tags.stream().forEach(tag -> {
+                ArticleTagEntity articleTagEntity = new ArticleTagEntity();
+                articleTagEntity.setArticleId(articleDetailDto.getId());
+                articleTagEntity.setTagId(tag);
+                articleTagService.save(articleTagEntity);
+            });
+        }
+        boolean b = updateById(articleEntity);
+        return R.successResult();
+    }
+
+    @Transactional
+    @Override
+    public R insertArticle(@RequestBody ArticleDetailDto articleDetailDto) {
+
+        ArticleEntity articleEntity = BeanCopyUtils.copyBean(articleDetailDto, ArticleEntity.class);
+        //保存对应的标签
+        List<Long> tags = articleDetailDto.getTags();
+        tags.stream().forEach(tag -> {
+            ArticleTagEntity articleTagEntity = new ArticleTagEntity();
+            articleTagEntity.setArticleId(articleDetailDto.getId());
+            articleTagEntity.setTagId(tag);
+            articleTagService.save(articleTagEntity);
+        });
+
+        //保存文章
+        save(articleEntity);
+
+        return R.successResult();
+    }
+
+    @Override
+    public R<PageVo<ArticleListVo>> adminArticleList(String title, Character status, Long categoryId, Long spanId, Long currentPage, Long pageSize) {
+
+        //1.获取id 查看权限 返回对应的文章
+        //当前查询人的账号
+        Long userId = SecurityUtils.getUserId();
+        LambdaQueryWrapper<UserRoleEntity> userRoleEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userRoleEntityLambdaQueryWrapper.eq(UserRoleEntity::getUserId,userId);
+        UserRoleEntity userRole = userRoleService.getOne(userRoleEntityLambdaQueryWrapper);
+
+
+
+        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
+        //根据权限显示对应的数据
+        if(!(userRole.getRoleId()==1L ||userRole.getRoleId()==2L)){ //
+            queryWrapper.eq(ArticleEntity::getCreateBy,userId);
+        }
+
+
+        if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为按传输的值搜索
+            queryWrapper.eq(ArticleEntity::getStatus,status);
+        }
+        queryWrapper.like(Objects.nonNull(title),ArticleEntity::getTitle,title);
+
+        if(Objects.nonNull(spanId) && spanId>0){
+            LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            LambdaQueryWrapper<ArticleTagEntity> eq = articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getTagId,spanId);
+            List<Long> articleIds = articleTagService.list(eq).stream().map(ArticleTagEntity::getArticleId).collect(Collectors.toList());
+            queryWrapper.in(ArticleEntity::getId,articleIds);
+        }
+
+
+        queryWrapper.eq(Objects.nonNull(categoryId)&&categoryId>0,ArticleEntity::getCategoryId,categoryId);
+        queryWrapper.orderByDesc(ArticleEntity::getIsTop);
+        Page<ArticleEntity> articleEntityPage = new Page<>(currentPage,pageSize);
+        page(articleEntityPage,queryWrapper); //查询结果会存入articleEntityPage
+
+        List<ArticleEntity> articleEntities = articleEntityPage.getRecords();
+
+        //获取分类id对应的分类名称
+        articleEntities= articleEntities.stream().peek(articleEntity -> {
+            CategoryEntity categoryEntity = categoryService.getById(articleEntity.getCategoryId());
+            String name = categoryEntity.getName();
+            articleEntity.setCategoryName(name);
+            //获取观看量
+            Integer viewCount = redisCache.getCacheMapValue("article:viewCount", articleEntity.getId().toString());
+            if(Objects.nonNull(viewCount)){ //如果redis中读取到观看数就设置反之就使用数据库中的
+                articleEntity.setViewCount(viewCount.longValue());
+            }
+
+
+            //获取评论数
+            LambdaQueryWrapper<CommentEntity> commentEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            commentEntityLambdaQueryWrapper.eq(CommentEntity::getArticleId,articleEntity.getId());
+            int count = commentService.count(commentEntityLambdaQueryWrapper);
+            articleEntity.setCommentCount((long) count);
+
+        }).collect(Collectors.toList());
+
+
+        List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articleEntities, ArticleListVo.class);
+
+        articleListVos.stream().forEach(articleListVo -> setTag(articleListVo));
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
+
+        return R.successResult(articleListVoPageVo);
 
     }
 

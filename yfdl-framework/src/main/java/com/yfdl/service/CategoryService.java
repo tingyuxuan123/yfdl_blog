@@ -15,4 +15,8 @@ import java.util.List;
  */
 public interface CategoryService extends IService<CategoryEntity> {
     R<List<CategoryListVo>> getCategoryList();
+
+    R getAllCategoryList();
+
+    R allCategoryDetailList();
 }

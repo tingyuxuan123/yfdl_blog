@@ -28,12 +28,14 @@ public class ArticleController {
     }
 
     @GetMapping("articleList")
-    public R<PageVo<ArticleListVo>> articleList(@RequestParam(required = false) Long categoryId ,
+    public R<PageVo<ArticleListVo>> articleList(@RequestParam(required = false) String title,
+                                                @RequestParam(required = false) Character status,
+                                                @RequestParam(required = false) Long categoryId ,
+                                                @RequestParam(required = false) Long spanId,
                                                 @RequestParam(defaultValue = "1") Long currentPage,
                                                 @RequestParam(defaultValue = "10") Long pageSize){
         //查询对分类下的文章列表
-
-        return articleService.articleList(categoryId,currentPage,pageSize);
+        return articleService.articleList(title,status,categoryId,spanId,currentPage,pageSize);
 
     }
 

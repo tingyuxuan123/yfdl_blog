@@ -17,17 +17,17 @@ public class GlobalExceptionHandler {
         log.error("发生了异常:{}",e);
 
         //从异常对象中获取提示信息封装返回
-        return R.errorResult(e.getCode(), e.getMsg());
+        return R.errorResult(e.getCode(), "运行出错");
     }
 
 
     @ExceptionHandler(Exception.class)
-    public R exceptionHandler(SystemException e){
+    public R exceptionHandler(RuntimeException e){
         //打印异常学校
         log.error("发生了异常:{}",e);
 
         //从异常对象中获取提示信息封装返回
-        return R.errorResult(AppHttpCodeEnum.SYSTEM_ERROR,e.getMsg());
+        return R.errorResult(AppHttpCodeEnum.SYSTEM_ERROR,e.getMessage());
     }
 
 }

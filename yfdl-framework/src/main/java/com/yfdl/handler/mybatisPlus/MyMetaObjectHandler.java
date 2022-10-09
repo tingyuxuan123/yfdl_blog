@@ -18,7 +18,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) { //在插入时会自动填充这些字段
         Long userId = null;
-        try {
+        try {  //用户创建时会出现异常
             userId = SecurityUtils.getUserId();  //注册是没有添加id 的
         } catch (Exception e) {
             e.printStackTrace(); //抛出异常，并赋值-1

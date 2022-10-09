@@ -16,4 +16,13 @@ public interface UserService extends IService<UserEntity> {
     R updateUserInfo(UserEntity user);
 
     R register(UserEntity user);
+
+
+    R getInfo();
+
+    R getRouters();
+
+    R updateInfo(UserEntity user);
+
+    R updatePassword(UserEntity user);
 }

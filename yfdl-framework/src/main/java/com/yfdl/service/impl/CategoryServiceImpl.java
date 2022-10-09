@@ -10,6 +10,7 @@ import com.yfdl.service.CategoryService;
 import com.yfdl.mapper.CategoryMapper;
 import com.yfdl.entity.CategoryEntity;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.vo.CategoryDetailListVo;
 import com.yfdl.vo.CategoryListVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, CategoryEnt
 
     @Override
     public R<List<CategoryListVo>> getCategoryList() {
-        //获取分类列表
+        //获取分类列表，必须要有文章才会返回分类
 
         //1只展示分类列表
         LambdaQueryWrapper<ArticleEntity> articleEntityLambdaQueryWrapper = new LambdaQueryWrapper<ArticleEntity>();
@@ -56,6 +57,30 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, CategoryEnt
 
 
         return R.successResult(categoryListVos);
+    }
+
+    @Override
+    public R getAllCategoryList() {  //返回所有分类列表
+        List<CategoryEntity> list = list();
+        List<CategoryListVo> categoryListVos = BeanCopyUtils.copyBeanList(list, CategoryListVo.class);
+
+        return R.successResult(categoryListVos);
+    }
+
+    @Override
+    public R allCategoryDetailList() {
+
+        List<CategoryEntity> list = list();
+        List<CategoryDetailListVo> categoryDetailListVos = BeanCopyUtils.copyBeanList(list, CategoryDetailListVo.class);
+
+        categoryDetailListVos.forEach(categoryDetailListVo -> {
+            LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(ArticleEntity::getCategoryId,categoryDetailListVo.getId());
+            int count = articleService.count(queryWrapper);
+            categoryDetailListVo.setArticleCount((long) count);
+
+        });
+        return R.successResult(categoryDetailListVos);
     }
 
 

@@ -5,18 +5,31 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
+import com.yfdl.constants.SystemConstants;
+import com.yfdl.entity.MenuEntity;
+import com.yfdl.entity.UserRoleEntity;
+import com.yfdl.service.MenuService;
+import com.yfdl.service.RoleService;
+import com.yfdl.service.UserRoleService;
 import com.yfdl.service.UserService;
 import com.yfdl.mapper.UserMapper;
 import com.yfdl.entity.UserEntity;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.utils.JwtUtil;
+import com.yfdl.utils.RedisCache;
 import com.yfdl.utils.SecurityUtils;
-import com.yfdl.vo.UserInfoVo;
+import com.yfdl.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 用户表(User)表服务实现类
@@ -29,6 +42,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+
+    @Autowired
+    private MenuService menuService;
+
+    @Autowired
+    private RoleService roleService;
+
+    @Autowired
+    private UserRoleService userRoleService;
+
     @Override
     public R userInfo() {
         //获取用户id
@@ -46,6 +70,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     }
 
+    @Transactional
     @Override
     public R register(UserEntity user) {
         if(!StringUtils.hasText(user.getNickName())){
@@ -73,8 +98,70 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         String encode = passwordEncoder.encode(user.getPassword());
         user.setPassword(encode);
+        save(user);  //添加用户
 
-        save(user);
+        UserRoleEntity userRoleEntity = new UserRoleEntity();
+        userRoleEntity.setUserId(user.getId());
+        userRoleEntity.setRoleId(SystemConstants.USER_ROLE_COMMON); //
+
+        userRoleService.save(userRoleEntity);
+
+
+        return R.successResult();
+    }
+
+
+    @Override
+    public R getInfo() {
+        //获取用户基本信息，权限，可以操作的功能
+        //获取用户id
+//        LoginUser loginUser = SecurityUtils.getLoginUser();
+//        UserEntity user = loginUser.getUser();
+//        UserInfoVo userInfoVo = BeanCopyUtils.copyBean(user, UserInfoVo.class);
+//        //存入用户信息
+//        AdminUserInfoVo adminUserInfoVo = new AdminUserInfoVo();
+//        adminUserInfoVo.setUser(userInfoVo);
+//        List<String> perms = menuService.selectPermsByUserId(SecurityUtils.getUserId());
+//
+//        List<String> roleKeyList= roleService.selectRoleKeyByUserId(SecurityUtils.getUserId());
+//
+//        adminUserInfoVo.setPermissions(perms);
+//        adminUserInfoVo.setRoles(roleKeyList);
+
+
+        Long userId = SecurityUtils.getUserId();
+        UserEntity user = getById(userId);
+        UserInfoVo userInfoVo = BeanCopyUtils.copyBean(user, UserInfoVo.class);
+
+        return R.successResult(userInfoVo);
+
+    }
+
+    @Override
+    public R getRouters() {
+        //获取该用户能看到的菜单和分类
+         Long userId = SecurityUtils.getUserId();
+         List<MenuVo> menus= menuService.selectRouterMenuTreeByUserId(userId);
+        return R.successResult(new RouterVo(menus));
+    }
+
+    @Override
+    public R updateInfo(UserEntity user) {
+        Long userId = SecurityUtils.getUserId();
+        user.setId(userId);
+        boolean b = updateById(user);
+
+        return getInfo();
+    }
+
+    @Override
+    public R updatePassword(UserEntity user) {
+        Long userId = SecurityUtils.getUserId();
+        user.setId(userId);
+        String encode = passwordEncoder.encode(user.getPassword());
+        user.setPassword(encode);
+        updateById(user);
+
         return R.successResult();
     }
 

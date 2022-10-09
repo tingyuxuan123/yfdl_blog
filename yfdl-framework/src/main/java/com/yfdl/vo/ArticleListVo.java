@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -41,6 +42,23 @@ public class ArticleListVo {
      * 访问量
      */
     private Long viewCount;
+
+    /**
+     * 评论数
+     */
+
+    private Integer commentCount=0;
+
+    /**
+     * 标签
+     */
+
+    private List<TagListVo> tags;
+
+    /**
+     * 状态
+     */
+    private String status;
 
     /**
      * 创建时间
