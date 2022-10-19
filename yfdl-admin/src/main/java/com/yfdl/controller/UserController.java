@@ -74,4 +74,15 @@ public class UserController {
         return userService.updatePassword(user);
     }
 
+
+    @GetMapping("/user/userList")
+    public R userList(@RequestParam Long currentPage,
+                      @RequestParam Long pageSize,
+                      @RequestParam(required = false) String userName,
+                      @RequestParam(required = false) String phonenumber,
+                      @RequestParam(required = false) String status ){
+
+        return  userService.userList(currentPage,pageSize,userName,phonenumber,status);
+    }
+
 }

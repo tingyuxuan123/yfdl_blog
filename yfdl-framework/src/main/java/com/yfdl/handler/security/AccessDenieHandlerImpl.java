@@ -17,7 +17,8 @@ import java.io.IOException;
  * 有权失败的异常拦截
  */
 @Component
-public class AccessDenieHandlerImpl implements AccessDeniedHandler {
+public class
+AccessDenieHandlerImpl implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
         //打印异常

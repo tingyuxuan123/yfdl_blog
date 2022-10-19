@@ -23,6 +23,11 @@ public class MenuVo {
     private String menuName;
 
     /**
+     * 路由名称
+     */
+    private String name;
+
+    /**
      * 父菜单ID
      */
     private Long parentId;

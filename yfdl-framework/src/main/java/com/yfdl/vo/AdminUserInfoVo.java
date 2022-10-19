@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * 后台登录返回的数据列表
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

@@ -1,6 +1,7 @@
 package com.yfdl.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yfdl.common.R;
 import com.yfdl.entity.MenuEntity;
 import com.yfdl.vo.MenuVo;
 
@@ -17,4 +18,6 @@ public interface MenuService extends IService<MenuEntity> {
     List<String> selectPermsByUserId(Long userId);
 
     List<MenuVo> selectRouterMenuTreeByUserId(Long userId);
+
+    R deleteMenu(Long id);
 }

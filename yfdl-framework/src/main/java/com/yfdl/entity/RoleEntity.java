@@ -17,7 +17,7 @@ import lombok.Data;
  */
 @Data
 @NoArgsConstructor
-@TableName("role")
+@TableName("sys_role")
 public class RoleEntity implements Serializable {
     private static final long serialVersionUID = -78752814619068486L;
 

@@ -1,12 +1,12 @@
 package com.yfdl.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
 import com.yfdl.constants.SystemConstants;
-import com.yfdl.entity.MenuEntity;
 import com.yfdl.entity.UserRoleEntity;
 import com.yfdl.service.MenuService;
 import com.yfdl.service.RoleService;
@@ -15,14 +15,9 @@ import com.yfdl.service.UserService;
 import com.yfdl.mapper.UserMapper;
 import com.yfdl.entity.UserEntity;
 import com.yfdl.utils.BeanCopyUtils;
-import com.yfdl.utils.JwtUtil;
-import com.yfdl.utils.RedisCache;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,25 +110,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     public R getInfo() {
         //获取用户基本信息，权限，可以操作的功能
         //获取用户id
-//        LoginUser loginUser = SecurityUtils.getLoginUser();
-//        UserEntity user = loginUser.getUser();
-//        UserInfoVo userInfoVo = BeanCopyUtils.copyBean(user, UserInfoVo.class);
-//        //存入用户信息
-//        AdminUserInfoVo adminUserInfoVo = new AdminUserInfoVo();
-//        adminUserInfoVo.setUser(userInfoVo);
-//        List<String> perms = menuService.selectPermsByUserId(SecurityUtils.getUserId());
-//
-//        List<String> roleKeyList= roleService.selectRoleKeyByUserId(SecurityUtils.getUserId());
-//
-//        adminUserInfoVo.setPermissions(perms);
-//        adminUserInfoVo.setRoles(roleKeyList);
-
-
-        Long userId = SecurityUtils.getUserId();
-        UserEntity user = getById(userId);
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        UserEntity user = loginUser.getUser();
         UserInfoVo userInfoVo = BeanCopyUtils.copyBean(user, UserInfoVo.class);
+        //存入用户信息
+        AdminUserInfoVo adminUserInfoVo = new AdminUserInfoVo();
+        adminUserInfoVo.setUser(userInfoVo);
+        List<String> perms = menuService.selectPermsByUserId(SecurityUtils.getUserId());
 
-        return R.successResult(userInfoVo);
+        List<String> roleKeyList= roleService.selectRoleKeyByUserId(SecurityUtils.getUserId());
+
+        adminUserInfoVo.setPermissions(perms);
+        adminUserInfoVo.setRoles(roleKeyList);
+        return R.successResult(adminUserInfoVo);
+
+//        Long userId = SecurityUtils.getUserId();
+//        UserEntity user = getById(userId);
+//        UserInfoVo userInfoVo = BeanCopyUtils.copyBean(user, UserInfoVo.class);
+
+      //  return R.successResult(userInfoVo);
 
     }
 
@@ -163,6 +158,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         updateById(user);
 
         return R.successResult();
+    }
+
+    @Override
+    public R userList(Long currentPage, Long pageSize, String userName, String phonenumber, String status) {
+
+        LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Objects.nonNull(userName),UserEntity::getUserName,userName);
+        queryWrapper.eq(Objects.nonNull(phonenumber),UserEntity::getPhonenumber,phonenumber);
+        queryWrapper.eq(Objects.nonNull(status),UserEntity::getStatus,status);
+        Page<UserEntity> userEntityPage = new Page<>(currentPage,pageSize);
+        page(userEntityPage,queryWrapper);
+
+        List<AdminUserListVo> adminUserListVos = BeanCopyUtils.copyBeanList(userEntityPage.getRecords(), AdminUserListVo.class);
+
+        PageVo<AdminUserListVo> adminUserListVoPageVo = new PageVo<>(adminUserListVos, userEntityPage.getTotal());
+
+        return R.successResult(adminUserListVoPageVo);
     }
 
     public boolean userNameExist(String username){
