@@ -22,6 +22,11 @@ public class RoleController {
         return  roleService.roleList(currentPage,pageSize,roleName,status);
     }
 
+    @GetMapping("roleListBySelect")
+    public R roleListBySelect(){
+        return  roleService.roleListBySelect();
+    }
+
 
     @PostMapping("insertRole")
     public R insertRole(@RequestBody RoleDto roleDto){

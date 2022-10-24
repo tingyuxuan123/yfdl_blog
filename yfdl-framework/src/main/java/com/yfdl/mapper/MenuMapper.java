@@ -3,6 +3,7 @@ package com.yfdl.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yfdl.entity.MenuEntity;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface MenuMapper extends BaseMapper<MenuEntity> {
     List<String> selectPermsByUserId(Long userId);
 
     List<MenuEntity> selectRootMenuByUserId(Long userId);
+
+    List<MenuEntity> getChildren(@Param("userId") Long userId, @Param("id") Long id);
 }

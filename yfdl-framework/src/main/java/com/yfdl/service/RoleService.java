@@ -23,4 +23,6 @@ public interface RoleService extends IService<RoleEntity> {
     R updateRole(RoleDto roleDto);
 
     R deleteRole(Long roleId);
+
+    R roleListBySelect();
 }

@@ -7,6 +7,9 @@ import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
 import com.yfdl.constants.SystemConstants;
+import com.yfdl.dto.user.UserInfoByInsertDto;
+import com.yfdl.dto.user.UserInfoByUpdateDto;
+import com.yfdl.entity.RoleMenuEntity;
 import com.yfdl.entity.UserRoleEntity;
 import com.yfdl.service.MenuService;
 import com.yfdl.service.RoleService;
@@ -18,6 +21,7 @@ import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +69,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     }
 
+    /**
+     * 添加/注册用户信息
+     * @param user
+     * @return
+     */
     @Transactional
     @Override
     public R register(UserEntity user) {
@@ -140,6 +149,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         return R.successResult(new RouterVo(menus));
     }
 
+    /**
+     * 更新当前信息
+     * @param user
+     * @return
+     */
     @Override
     public R updateInfo(UserEntity user) {
         Long userId = SecurityUtils.getUserId();
@@ -148,6 +162,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         return getInfo();
     }
+
+
 
     @Override
     public R updatePassword(UserEntity user) {
@@ -172,9 +188,69 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         List<AdminUserListVo> adminUserListVos = BeanCopyUtils.copyBeanList(userEntityPage.getRecords(), AdminUserListVo.class);
 
+        //获取对应的权限id
+        adminUserListVos.stream().forEach(adminUserListVo -> {
+            Long id = adminUserListVo.getId();
+            LambdaQueryWrapper<UserRoleEntity> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+            lambdaQueryWrapper.eq(UserRoleEntity::getUserId,id);
+            UserRoleEntity user = userRoleService.getOne(lambdaQueryWrapper);
+            if(Objects.nonNull(user)){
+                Long roleId = user.getRoleId();
+                adminUserListVo.setRoleId(roleId);
+            }
+
+        });
+
         PageVo<AdminUserListVo> adminUserListVoPageVo = new PageVo<>(adminUserListVos, userEntityPage.getTotal());
 
+//        System.out.println(adminUserListVoPageVo);
+
         return R.successResult(adminUserListVoPageVo);
+    }
+
+    @Transactional
+    @Override
+    public R AdminupdateUserInfo(UserInfoByUpdateDto userInfoByUpdateDto) {
+        UserEntity userEntity = BeanCopyUtils.copyBean(userInfoByUpdateDto, UserEntity.class);
+        boolean b = updateById(userEntity);
+
+        if (Objects.nonNull(userInfoByUpdateDto.getRoleId())){
+            UserRoleEntity userRoleEntity = new UserRoleEntity();
+            userRoleEntity.setUserId(userEntity.getId());
+            userRoleEntity.setRoleId(userInfoByUpdateDto.getRoleId());
+            LambdaQueryWrapper<UserRoleEntity> userRoleEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            userRoleEntityLambdaQueryWrapper.eq(UserRoleEntity::getUserId,userEntity.getId());
+
+            boolean update = userRoleService.update(userRoleEntity, userRoleEntityLambdaQueryWrapper);
+
+        }
+
+        return R.successResult();
+    }
+
+    @Value("${InitPassword}")
+    private String InitPassword;
+    /**
+     * 用户管理添加用户
+     * @param userInfoByInsertDto
+     * @return
+     */
+    @Transactional
+    @Override
+    public R insertUser(UserInfoByInsertDto userInfoByInsertDto) {
+        UserEntity userEntity = BeanCopyUtils.copyBean(userInfoByInsertDto, UserEntity.class);
+        userEntity.setPassword(passwordEncoder.encode(InitPassword));
+        boolean isSave = save(userEntity);
+
+        if(Objects.nonNull(userInfoByInsertDto.getRoleId())){
+            UserRoleEntity userRoleEntity = new UserRoleEntity();
+            userRoleEntity.setUserId(userEntity.getId());
+            userRoleEntity.setRoleId(userInfoByInsertDto.getRoleId());
+            boolean update = userRoleService.save(userRoleEntity);
+
+        }
+
+        return R.successResult();
     }
 
     public boolean userNameExist(String username){

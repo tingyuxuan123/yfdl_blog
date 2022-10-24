@@ -90,16 +90,26 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, MenuEntity> impleme
 
     public void getChildren(MenuVo menuVo,Long userId){
 
-            LambdaQueryWrapper<MenuEntity> menuEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            menuEntityLambdaQueryWrapper.eq(MenuEntity::getParentId, menuVo.getId());
-            if(userId!=1L){
-                menuEntityLambdaQueryWrapper.eq(MenuEntity::getStatus,'0');
+
+
+            if(userId==1L){ //如果用户id 为1 禁用的也显示
+                //判断
+                LambdaQueryWrapper<MenuEntity> menuEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                menuEntityLambdaQueryWrapper.eq(MenuEntity::getParentId, menuVo.getId());
+                menuEntityLambdaQueryWrapper.orderByAsc(MenuEntity::getOrderNum);
+                menuEntityLambdaQueryWrapper.in(MenuEntity::getMenuType,SystemConstants.Category,SystemConstants.MENU);
+                List<MenuEntity> list = list(menuEntityLambdaQueryWrapper);
+                List<MenuVo> menuVos = BeanCopyUtils.copyBeanList(list, MenuVo.class);
+                menuVo.setChildren(menuVos);
+            }else {
+                List<MenuEntity> children = getBaseMapper().getChildren(userId, menuVo.getId());
+                List<MenuVo> menuVos = BeanCopyUtils.copyBeanList(children, MenuVo.class);
+                menuVo.setChildren(menuVos);
             }
-            menuEntityLambdaQueryWrapper.orderByAsc(MenuEntity::getOrderNum);
-            menuEntityLambdaQueryWrapper.in(MenuEntity::getMenuType,SystemConstants.Category,SystemConstants.MENU);
-            List<MenuEntity> list = list(menuEntityLambdaQueryWrapper);
-            List<MenuVo> menuVos = BeanCopyUtils.copyBeanList(list, MenuVo.class);
-            menuVo.setChildren(menuVos);
-        }
+
+
+
+
+    }
 
 }

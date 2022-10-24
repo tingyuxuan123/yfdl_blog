@@ -1,6 +1,7 @@
 package com.yfdl.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.R;
 import com.yfdl.constants.SystemConstants;
@@ -12,10 +13,12 @@ import com.yfdl.entity.CategoryEntity;
 import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.vo.CategoryDetailListVo;
 import com.yfdl.vo.CategoryListVo;
+import com.yfdl.vo.PageVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -68,19 +71,42 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, CategoryEnt
     }
 
     @Override
-    public R allCategoryDetailList() {
+    public R allCategoryDetailList(Long currentPage, Long pageSize, String name, String status) {
+        Page<CategoryEntity> categoryEntityPage = new Page<>(currentPage,pageSize);
+        LambdaQueryWrapper<CategoryEntity> categoryEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        categoryEntityLambdaQueryWrapper.eq(Objects.nonNull(name),CategoryEntity::getName,name);
+        categoryEntityLambdaQueryWrapper.eq(Objects.nonNull(status),CategoryEntity::getStatus,status);
 
-        List<CategoryEntity> list = list();
-        List<CategoryDetailListVo> categoryDetailListVos = BeanCopyUtils.copyBeanList(list, CategoryDetailListVo.class);
+        page(categoryEntityPage,categoryEntityLambdaQueryWrapper);
+
+        List<CategoryDetailListVo> categoryDetailListVos = BeanCopyUtils.copyBeanList(categoryEntityPage.getRecords(), CategoryDetailListVo.class);
 
         categoryDetailListVos.forEach(categoryDetailListVo -> {
             LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(ArticleEntity::getCategoryId,categoryDetailListVo.getId());
             int count = articleService.count(queryWrapper);
             categoryDetailListVo.setArticleCount((long) count);
-
         });
-        return R.successResult(categoryDetailListVos);
+        PageVo<CategoryDetailListVo> pageVo = new PageVo(categoryDetailListVos, categoryEntityPage.getTotal());
+        return R.successResult(pageVo);
+    }
+
+    @Override
+    public R insertCategory(CategoryEntity categoryEntity) {
+        boolean save = save(categoryEntity);
+        return R.successResult();
+    }
+
+    @Override
+    public R updateCategory(CategoryEntity categoryEntity) {
+        boolean b = updateById(categoryEntity);
+        return R.successResult();
+    }
+
+    @Override
+    public R deleteCategory(Long id) {
+        boolean b = removeById(id);
+        return R.successResult();
     }
 
 

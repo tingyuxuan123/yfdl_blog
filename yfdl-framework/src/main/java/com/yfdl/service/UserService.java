@@ -2,6 +2,8 @@ package com.yfdl.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yfdl.common.R;
+import com.yfdl.dto.user.UserInfoByInsertDto;
+import com.yfdl.dto.user.UserInfoByUpdateDto;
 import com.yfdl.entity.UserEntity;
 
 /**
@@ -27,4 +29,8 @@ public interface UserService extends IService<UserEntity> {
     R updatePassword(UserEntity user);
 
     R userList(Long currentPage, Long pageSize, String userName, String phonenumber, String status);
+
+    R AdminupdateUserInfo(UserInfoByUpdateDto userInfoByUpdateDto);
+
+    R insertUser(UserInfoByInsertDto userInfoByInsertDto);
 }

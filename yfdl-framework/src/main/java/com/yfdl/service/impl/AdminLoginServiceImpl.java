@@ -35,6 +35,9 @@ public class AdminLoginServiceImpl implements AdminLoginService {
         if(Objects.isNull(authenticate)){
             throw new RuntimeException("用户名或密码为空");
         }
+
+
+
         //获取userid 生成token
         LoginUser loginUser= (LoginUser)authenticate.getPrincipal();
         String userId=loginUser.getUser().getId().toString();

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.yfdl.common.R;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
@@ -63,5 +64,6 @@ public class CategoryEntity implements Serializable {
      * 删除标志（0代表未删除，1代表已删除）
      */
     private Integer delFlag;
+
 
 }

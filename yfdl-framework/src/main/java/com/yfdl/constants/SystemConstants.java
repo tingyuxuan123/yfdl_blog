@@ -76,4 +76,15 @@ public class SystemConstants {
      */
     public static final Long USER_ROLE_SUPERADMIN= 1L;
 
+    /**
+     * 用户状态正常
+     */
+    public static final String USER_STATUS_NORMAL="0";
+
+    /**
+     * 用户状态禁用
+     */
+    public static final String USER_STATUS_NOTNORMAL="1";
+
+
 }

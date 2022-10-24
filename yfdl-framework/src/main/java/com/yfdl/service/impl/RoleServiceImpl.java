@@ -13,6 +13,7 @@ import com.yfdl.entity.RoleEntity;
 import com.yfdl.service.UserRoleService;
 import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.vo.PageVo;
+import com.yfdl.vo.RoleBySelectVo;
 import com.yfdl.vo.RoleVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,6 +70,8 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, RoleEntity> impleme
         return R.successResult(roleEntityPageVo);
     }
 
+
+
     @Override
     @Transactional
     public R insertRole(RoleDto roleDto) {
@@ -104,7 +107,11 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, RoleEntity> impleme
         RoleEntity roleEntity = BeanCopyUtils.copyBean(roleDto, RoleEntity.class);
         updateById(roleEntity);
 
+        //如果权限有修改
         if(Objects.nonNull(roleDto.getRoleMenu())){
+            //1.先删除对应角色的所有权限
+            delete_role(roleDto.getId());
+            //2.在重新添加权限
             addRoleMenu(roleDto.getId(),roleDto);
         }
 
@@ -128,6 +135,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, RoleEntity> impleme
         removeById(roleId);
         delete_role(roleId);
         return null;
+    }
+
+    @Override
+    public R roleListBySelect() {
+        List<RoleEntity> list = list();
+        List<RoleBySelectVo> roleBySelectVos = BeanCopyUtils.copyBeanList(list, RoleBySelectVo.class);
+        return R.successResult(roleBySelectVos);
     }
 
 

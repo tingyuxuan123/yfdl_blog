@@ -222,6 +222,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         return R.successResult();
     }
 
+    /**
+     * 后台用户对个人的文章
+     * @param title
+     * @param status
+     * @param categoryId
+     * @param spanId
+     * @param currentPage
+     * @param pageSize
+     * @return
+     */
     @Override
     public R<PageVo<ArticleListVo>> adminArticleList(String title, Character status, Long categoryId, Long spanId, Long currentPage, Long pageSize) {
 
@@ -233,15 +243,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         UserRoleEntity userRole = userRoleService.getOne(userRoleEntityLambdaQueryWrapper);
 
 
-
         LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
+
         //根据权限显示对应的数据
-        if(!(userRole.getRoleId()==1L ||userRole.getRoleId()==2L)){ //
-            queryWrapper.eq(ArticleEntity::getCreateBy,userId);
-        }
+        queryWrapper.eq(ArticleEntity::getCreateBy,userId);
 
 
-        if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为按传输的值搜索
+        if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为空按传输的值搜索
             queryWrapper.eq(ArticleEntity::getStatus,status);
         }
         queryWrapper.like(Objects.nonNull(title),ArticleEntity::getTitle,title);
@@ -272,7 +280,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                 articleEntity.setViewCount(viewCount.longValue());
             }
 
-
             //获取评论数
             LambdaQueryWrapper<CommentEntity> commentEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
             commentEntityLambdaQueryWrapper.eq(CommentEntity::getArticleId,articleEntity.getId());
@@ -289,8 +296,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
 
         return R.successResult(articleListVoPageVo);
-
     }
+
+
+
 
 
 }

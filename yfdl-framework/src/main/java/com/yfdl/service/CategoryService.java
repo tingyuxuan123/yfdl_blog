@@ -18,5 +18,11 @@ public interface CategoryService extends IService<CategoryEntity> {
 
     R getAllCategoryList();
 
-    R allCategoryDetailList();
+    R allCategoryDetailList(Long currentPage, Long pageSize, String name, String status);
+
+    R insertCategory(CategoryEntity categoryEntity);
+
+    R updateCategory(CategoryEntity categoryEntity);
+
+    R deleteCategory(Long id);
 }

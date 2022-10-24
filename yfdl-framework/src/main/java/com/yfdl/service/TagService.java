@@ -2,6 +2,7 @@ package com.yfdl.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yfdl.common.R;
+import com.yfdl.entity.CategoryEntity;
 import com.yfdl.entity.TagEntity;
 
 /**
@@ -12,4 +13,12 @@ import com.yfdl.entity.TagEntity;
  */
 public interface TagService extends IService<TagEntity> {
     R getTagList();
+
+    R queryTagListByParams(Long currentPage, Long pageSize, String name);
+
+    R insertTag(TagEntity tagEntity);
+
+    R updateTag(TagEntity tagEntity);
+
+    R deleteTag(Long id);
 }

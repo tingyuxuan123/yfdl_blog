@@ -2,6 +2,8 @@ package com.yfdl.controller;
 
 import com.yfdl.common.R;
 import com.yfdl.dto.LoginDto;
+import com.yfdl.dto.user.UserInfoByInsertDto;
+import com.yfdl.dto.user.UserInfoByUpdateDto;
 import com.yfdl.entity.UserEntity;
 import com.yfdl.service.AdminLoginService;
 import com.yfdl.service.UserService;
@@ -30,7 +32,7 @@ public class UserController {
     }
 
     /**
-     * 注册
+     * 注册,默认权限为普通用户
      * @return
      */
     @PostMapping("/user/register")
@@ -38,7 +40,10 @@ public class UserController {
         return userService.register(user);
     }
 
-
+    @PostMapping("/user/insertUser")
+    public R insertUser(@RequestBody UserInfoByInsertDto userInfoByInsertDto){
+        return userService.insertUser(userInfoByInsertDto);
+    }
 
     /**
      * 获取用户信息
@@ -56,12 +61,21 @@ public class UserController {
     }
 
     /**
-     * 更新用户信息
+     * 更新个人信息
      * 需要登录
      */
     @PostMapping("user/updateInfo")
     public R updateInfo(@RequestBody UserEntity user){
         return userService.updateInfo(user);
+    }
+
+    /**
+     * 修改用户信息
+     * @return
+     */
+    @PostMapping("user/updateUserInfo")
+    public R AdminUpdateUserInfo(@RequestBody UserInfoByUpdateDto userInfoByUpdateDto){
+        return userService.AdminupdateUserInfo(userInfoByUpdateDto);
     }
 
     /**

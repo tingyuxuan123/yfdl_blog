@@ -30,4 +30,6 @@ oss:
   accessKey: "tpJ0_s96WtHEe4lihFyiE80HwFczOQ27rVEak8YA"
   secretKey: "091ttPM5jEOBMPX63fJUWoM1qQTjgYKcdPYZ8DIn"
   bucket: "yfdlblog"
-  baseurl: "http://rix8td9b0.bkt.clouddn.com"
+  baseurl: "http://img.yfdl.site"
+
+InitPassword: "123"  # 后台创建用户的初始密码

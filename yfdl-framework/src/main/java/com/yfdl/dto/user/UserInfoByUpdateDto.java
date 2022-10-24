@@ -1,20 +1,14 @@
-package com.yfdl.vo;
+package com.yfdl.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
-
-/**
- * 用户管理返回的数据
- */
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AdminUserListVo {
-
+public class UserInfoByUpdateDto {
     private Long id;
 
     /**
@@ -54,18 +48,9 @@ public class AdminUserListVo {
      */
     private String sex;
 
-    /**
-     * 头像
-     */
-    private String avatar;
-
-    /**
-     * 个人说明
-     */
-    private String label;
 
 
-    private Date createTime;
+
 
 
 }
