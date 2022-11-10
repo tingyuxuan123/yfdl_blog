@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class BlogLoginServiceImpl implements BlogLoginService {
@@ -43,6 +44,7 @@ public class BlogLoginServiceImpl implements BlogLoginService {
 
         //把用户存入redis
         redisCache.setCacheObject("bloglogin"+userId,loginUser);
+        redisCache.expire("bloglogin"+userId,(60 * 60 *1000L)*24, TimeUnit.SECONDS);
 
         //把token 和userinfo封装 返回
         UserInfoVo userInfoVo = BeanCopyUtils.copyBean(loginUser.getUser(), UserInfoVo.class);

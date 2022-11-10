@@ -2,9 +2,12 @@ package com.yfdl.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yfdl.common.R;
+import com.yfdl.dto.user.LoginOrRegisterByCodeDto;
 import com.yfdl.dto.user.UserInfoByInsertDto;
 import com.yfdl.dto.user.UserInfoByUpdateDto;
 import com.yfdl.entity.UserEntity;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * 用户表(User)表服务接口
@@ -33,4 +36,8 @@ public interface UserService extends IService<UserEntity> {
     R AdminupdateUserInfo(UserInfoByUpdateDto userInfoByUpdateDto);
 
     R insertUser(UserInfoByInsertDto userInfoByInsertDto);
+
+    R loginOrRegisterByCode(LoginOrRegisterByCodeDto loginOrRegisterByCodeDto);
+
+    R authorInfoByArticle(HttpServletRequest httpServletRequest, Long articleId);
 }

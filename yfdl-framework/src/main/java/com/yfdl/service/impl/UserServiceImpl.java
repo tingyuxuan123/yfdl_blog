@@ -1,5 +1,8 @@
 package com.yfdl.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.RandomUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -7,28 +10,29 @@ import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
 import com.yfdl.constants.SystemConstants;
+import com.yfdl.dto.user.LoginOrRegisterByCodeDto;
 import com.yfdl.dto.user.UserInfoByInsertDto;
 import com.yfdl.dto.user.UserInfoByUpdateDto;
-import com.yfdl.entity.RoleMenuEntity;
-import com.yfdl.entity.UserRoleEntity;
-import com.yfdl.service.MenuService;
-import com.yfdl.service.RoleService;
-import com.yfdl.service.UserRoleService;
-import com.yfdl.service.UserService;
+import com.yfdl.entity.*;
+import com.yfdl.service.*;
 import com.yfdl.mapper.UserMapper;
-import com.yfdl.entity.UserEntity;
-import com.yfdl.utils.BeanCopyUtils;
-import com.yfdl.utils.SecurityUtils;
+import com.yfdl.utils.*;
 import com.yfdl.vo.*;
+import com.yfdl.vo.user.AuthorInfoByArticleDto;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用户表(User)表服务实现类
@@ -51,6 +55,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     @Autowired
     private UserRoleService userRoleService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private RedisCache redisCache;
+
+    @Resource
+    private ArticleServiceImpl articleService;
+
+    @Resource
+    private FollowService followService;
+
 
     @Override
     public R userInfo() {
@@ -235,6 +252,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
      * @param userInfoByInsertDto
      * @return
      */
+
     @Transactional
     @Override
     public R insertUser(UserInfoByInsertDto userInfoByInsertDto) {
@@ -252,6 +270,146 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         return R.successResult();
     }
+
+    @Value("${defaultAvatar}")
+    private String defaultAvatar;
+
+    @Value("${defaultNicknamePrefix}")
+    private String defaultNicknamePrefix;
+
+    @Override
+    public R loginOrRegisterByCode(LoginOrRegisterByCodeDto loginOrRegisterByCodeDto) {
+        String email=loginOrRegisterByCodeDto.getEmail();
+
+        if (ObjectUtil.hasEmpty(loginOrRegisterByCodeDto)){ //如果对象中有值为空
+            return R.errorResult(400,"参数错误");
+        }
+
+        UserEntity user = query().eq("email", loginOrRegisterByCodeDto.getEmail()).one();
+        if (ObjectUtil.isNotEmpty(user)) {
+            //不为空 登录
+            String code = stringRedisTemplate.opsForValue().get(RedisConstant.BLOG_LOGIN_CODE + email);
+            if(loginOrRegisterByCodeDto.getCode().equals(code)){
+                //删除验证码
+                stringRedisTemplate.delete(RedisConstant.BLOG_LOGIN_CODE + email);
+                //验证码正确，登录成功
+
+                //获取userid 生成token
+                LoginUser loginUser = new LoginUser();
+                loginUser.setUser(user);
+
+                String userId=loginUser.getUser().getId().toString();
+                String jwt = JwtUtil.createJWT(userId);
+
+                //把用户存入redis
+                redisCache.setCacheObject("bloglogin"+userId,loginUser);
+                redisCache.expire("bloglogin"+userId,(60 * 60 *1000L)*24, TimeUnit.SECONDS);
+
+                //把token 和userinfo封装 返回
+                UserInfoVo userInfoVo = BeanCopyUtils.copyBean(loginUser.getUser(), UserInfoVo.class);
+                BlogUserLoginVo blogUserLoginVo = new BlogUserLoginVo(jwt,userInfoVo);
+
+                //返回用户信息;
+                return R.successResult(blogUserLoginVo);  //返回用户信息
+            }else {
+                return R.errorResult(400,"验证码错误");
+            }
+
+
+        }else {
+            //为空注册
+            UserEntity userEntity = new UserEntity();
+            userEntity.setEmail(email);
+            userEntity.setNickName(defaultNicknamePrefix+ RandomUtil.randomString(10));
+            userEntity.setAvatar(defaultAvatar);
+            userEntity.setPassword(passwordEncoder.encode(InitPassword));
+            String[] split = email.split("@");
+
+            userEntity.setUserName(split[0]);
+            boolean save = save(userEntity);
+
+
+            if(save){
+                //获取userid 生成token
+                LoginUser loginUser = new LoginUser();
+                loginUser.setUser(userEntity);
+
+                String userId=loginUser.getUser().getId().toString();
+                String jwt = JwtUtil.createJWT(userId);
+
+                //把用户存入redis
+                redisCache.setCacheObject("bloglogin"+userId,loginUser);
+                redisCache.expire("bloglogin"+userId,(60 * 60 *1000L)*24, TimeUnit.SECONDS);
+
+                //把token 和userinfo封装 返回
+                UserInfoVo userInfoVo = BeanCopyUtils.copyBean(loginUser.getUser(), UserInfoVo.class);
+                BlogUserLoginVo blogUserLoginVo = new BlogUserLoginVo(jwt,userInfoVo);
+
+                //返回用户信息;
+                return R.successResult(blogUserLoginVo);  //返回用户信息
+            }else {
+                return R.errorResult(400,"系统错误");
+            }
+
+        }
+
+
+    }
+
+    @Override
+    public R authorInfoByArticle(HttpServletRequest httpServletRequest, Long articleId) {
+
+        String token = httpServletRequest.getHeader("token");
+
+
+        //根据文章id 获取用户信息
+
+        //1.1 获取用户id
+        ArticleEntity article = articleService.query().select("create_by").eq("id",articleId).one();
+
+        //1.2 根据用户id 获取用户信息
+        UserEntity user = query().eq("id", article.getCreateBy()).one();
+
+        AuthorInfoByArticleDto authorInfoByArticle = baseMapper.getAuthorInfoByArticle(user.getId());
+        authorInfoByArticle.setIsFollow(false);
+
+        //1.3 判断 是否登录
+        if(!Objects.isNull(token)){
+            Claims claims;
+            try {
+                claims = JwtUtil.parseJWT(token);
+
+                String id = claims.getSubject();
+                long userId = Long.parseLong(id);
+
+                //1.4 如果登录查找关注表中 是否有关注
+
+                FollowEntity follow = followService.query().eq("user_id", userId).eq("follow_user_id", authorInfoByArticle.getId()).one();
+
+                if (ObjectUtil.isNotNull(follow)){
+                    //1.5 不为空
+                    authorInfoByArticle.setIsFollow(true);
+                }else {
+                    authorInfoByArticle.setIsFollow(false);
+                }
+
+            } catch (Exception e) {
+                //出现异常表示为未登录
+                authorInfoByArticle.setIsFollow(false);
+                return R.successResult(authorInfoByArticle);
+            }
+
+        }
+
+
+
+
+
+        return R.successResult(authorInfoByArticle);
+    }
+
+
+
 
     public boolean userNameExist(String username){
         LambdaQueryWrapper<UserEntity> userEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();

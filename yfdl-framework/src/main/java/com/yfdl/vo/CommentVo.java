@@ -44,14 +44,24 @@ public class CommentVo {
     private String username;
 
     /**
-     * 所回复的目标评论的userid
+     * 评论用户的头像
+     */
+    private String avatar;
+
+    /**
+     * 给评论回复的人的id
      */
     private Long toCommentUserId;
 
     /**
-     * 所回复目标的用户名，被评论人
+     * 给评论回复的人的用户名
      */
     private String toCommentUserName;
+
+    /**
+     * 给评论回复的人的头像
+     */
+    private String toCommentUserAvatar;
 
     /**
      * 回复目标评论id

@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequestMapping("/comment")
 @Api(tags = "评论")
@@ -19,11 +20,13 @@ public class CommentController {
     @Autowired
     private CommentService commentService;
 
+    @ApiOperation("获取评论列表")
     @GetMapping("/commentList")
     public R commentList(@RequestParam Long pageNum,@RequestParam Long pageSize,@RequestParam Long articleId){
         return commentService.commentList(SystemConstants.ARTICLE_COMMENT, pageNum,pageSize,articleId);
     }
 
+    @ApiOperation("发表评论")
     @PostMapping()
     public R comment(@RequestBody CommentEntity commentEntity){
         return commentService.comment(commentEntity);

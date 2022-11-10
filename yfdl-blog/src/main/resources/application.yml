@@ -15,6 +15,29 @@ spring:
     port: 6379
     username: default
     password: rootroot
+
+  #邮箱验证码配置
+  mail:
+    #smtp服务主机  qq邮箱则为smtp.qq.com;163邮箱是smtp.163.com
+    host: smtp.qq.com
+    #服务协议
+    protocol: smtp
+    # 编码集
+    default-encoding: UTF-8
+    #发送邮件的账户
+    username: 1146713212@qq.com
+    #授权码
+    password: eobyeuwvoecyiebj
+    test-connection: true
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+
 mybatis-plus:
   configuration:
     # 日志
@@ -31,3 +54,10 @@ oss:
   secretKey: "091ttPM5jEOBMPX63fJUWoM1qQTjgYKcdPYZ8DIn"
   bucket: "yfdlblog"
   baseurl: "http://rix8td9b0.bkt.clouddn.com"
+
+InitPassword: "123"  # 后台创建用户的初始密码
+defaultAvatar: "http://img.yfdl.site/2022/11/05/6b4555eb80594ebf9ae16769456df68d.jpeg"
+defaultNicknamePrefix: "yu_"
+
+
+

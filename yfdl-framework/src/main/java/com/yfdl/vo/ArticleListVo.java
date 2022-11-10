@@ -12,6 +12,18 @@ import java.util.List;
 @NoArgsConstructor
 public class ArticleListVo {
 
+
+    /**
+     * 用户昵称
+     */
+    private String nickName;
+
+    /**
+     * 用户头像
+     */
+    private String avatar;
+
+
     /**
      * 文章id
      */
@@ -44,6 +56,11 @@ public class ArticleListVo {
     private Long viewCount;
 
     /**
+     * 点赞数
+     */
+    private Long likesCount;
+
+    /**
      * 评论数
      */
 
@@ -65,5 +82,11 @@ public class ArticleListVo {
      */
     private Date createTime;
 
+    /**
+     * 创建人id
+     */
+    private Long createBy;
 
 }
+
+

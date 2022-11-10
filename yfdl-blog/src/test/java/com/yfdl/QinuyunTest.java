@@ -8,9 +8,11 @@ import com.qiniu.storage.Region;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.DefaultPutRet;
 import com.qiniu.util.Auth;
+import com.yfdl.utils.SendEmail;
 import lombok.Data;
 import org.apache.poi.ss.formula.functions.T;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,10 +23,12 @@ import java.io.*;
 @SpringBootTest
 public class QinuyunTest {
 
+    @Autowired
+    SendEmail sendEmail;
+
     @Test
     public void test(){
-        Te te = new Te();
-        te.start();
+        sendEmail.sendEmail("925528770@qq.com");
     }
 
 }

@@ -51,12 +51,13 @@ public class CommentEntity implements Serializable {
     private String content;
 
     /**
-     * 所回复的目标评论的userid
+     *  被评论人的id
      */
     private Long toCommentUserId;
 
+
     /**
-     * 回复目标评论id
+     * 回复目标评论id, 这个评论回复的是那个评论 ，这个那个评论的id
      */
     private Long toCommentId;
 

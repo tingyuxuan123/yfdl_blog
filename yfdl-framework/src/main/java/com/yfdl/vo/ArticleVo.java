@@ -8,7 +8,27 @@ import java.util.List;
 
 @Data
 public class ArticleVo {
+
+    /**
+     * 用户昵称
+     */
+    private String nickName;
+
+    /**
+     * 用户头像
+     */
+    private String avatar;
+
+
+    /**
+     * 文章id
+     */
+
     private Long id;
+
+    /**
+     *
+     */
 
     /**
      * 标题
@@ -31,6 +51,17 @@ public class ArticleVo {
     private Long categoryId;
 
     /**
+     * 点赞数
+     */
+    private Long likesCount;
+
+    /**
+     * 评论数
+     */
+    private Long commentCount;
+
+
+    /**
      * 分类名，表中不存在
      */
     @TableField(exist = false)
@@ -40,6 +71,8 @@ public class ArticleVo {
      * 缩略图
      */
     private String thumbnail;
+
+
 
     /**
      * 标签

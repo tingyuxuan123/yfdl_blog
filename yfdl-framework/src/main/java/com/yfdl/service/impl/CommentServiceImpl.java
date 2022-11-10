@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
+import com.yfdl.entity.UserEntity;
 import com.yfdl.service.CommentService;
 import com.yfdl.mapper.CommentMapper;
 import com.yfdl.entity.CommentEntity;
@@ -77,12 +78,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, CommentEntity
     public void toCommentVoList(List<CommentVo> commentVos){
 
         commentVos.stream().forEach(commentVo -> {
-          commentVo.setUsername(userService.getById(commentVo.getCreateBy()).getNickName());
-
+            UserEntity user = userService.getById(commentVo.getCreateBy());
+            commentVo.setUsername(user.getNickName());
+            commentVo.setAvatar(user.getAvatar());
 
             if(commentVo.getToCommentUserId()!=-1){
-              commentVo.setToCommentUserName(userService.getById(commentVo.getToCommentUserId()).getUserName());
-          }
+                UserEntity userByComment  = userService.getById(commentVo.getToCommentUserId());
+                commentVo.setToCommentUserName(userByComment.getNickName());
+//                commentVo.setAvatar(userByComment.getAvatar());
+
+            }
 
         });
 

@@ -1,6 +1,9 @@
 package com.yfdl.controller;
 
+import cn.hutool.core.util.StrUtil;
+import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
+import com.yfdl.common.SystemException;
 import com.yfdl.dto.LoginDto;
 import com.yfdl.dto.user.UserInfoByInsertDto;
 import com.yfdl.dto.user.UserInfoByUpdateDto;
@@ -8,8 +11,13 @@ import com.yfdl.entity.UserEntity;
 import com.yfdl.service.AdminLoginService;
 import com.yfdl.service.UserService;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.utils.RedisConstant;
+import com.yfdl.utils.SendEmail;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
 
 @RestController
 public class UserController {
@@ -19,6 +27,15 @@ public class UserController {
 
     @Autowired
     private AdminLoginService adminLoginService;
+
+    @Resource
+    private SendEmail sendEmail;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+
+
 
     /**
      * 用户登录

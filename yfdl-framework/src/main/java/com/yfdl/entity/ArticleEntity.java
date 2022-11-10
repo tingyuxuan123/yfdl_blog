@@ -46,6 +46,12 @@ public class ArticleEntity implements Serializable {
     private Long categoryId;
 
     /**
+     * 点赞数
+     */
+    private Long likesCount;
+
+
+    /**
      * 分类名，表中不存在
      */
     @TableField(exist = false)

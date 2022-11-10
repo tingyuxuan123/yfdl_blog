@@ -49,6 +49,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Autowired
     private UserRoleService userRoleService;
 
+    @Autowired
+    private UserService userService;
+
     @Override
     public R<List<ArticleEntity>> hotArticleList() {
 
@@ -66,10 +69,20 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         return R.successResult(hotArticleVos);
     }
 
+    /**
+     * 查询文章列表
+     * @param title  #文章标题
+     * @param status #文章状态
+     * @param categoryId #文章分类
+     * @param spanId #文章标签id
+     * @param currentPage
+     * @param pageSize
+     * @return
+     */
     @Override
     public R<PageVo<ArticleListVo>> articleList(String title,Character status,Long categoryId,Long spanId, Long currentPage, Long pageSize) {
 
-        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<ArticleEntity>();
+        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
         if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为按传输的值搜索
             queryWrapper.eq(ArticleEntity::getStatus,status);
         }
@@ -84,7 +97,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
 
         queryWrapper.eq(Objects.nonNull(categoryId)&&categoryId>0,ArticleEntity::getCategoryId,categoryId);
-        queryWrapper.orderByDesc(ArticleEntity::getIsTop);
+        queryWrapper.orderByDesc(ArticleEntity::getIsTop,ArticleEntity::getCreateTime);
         Page<ArticleEntity> articleEntityPage = new Page<>(currentPage,pageSize);
         page(articleEntityPage,queryWrapper); //查询结果会存入articleEntityPage
 
@@ -101,7 +114,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                  articleEntity.setViewCount(viewCount.longValue());
              }
 
-
              //获取评论数
              LambdaQueryWrapper<CommentEntity> commentEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
              commentEntityLambdaQueryWrapper.eq(CommentEntity::getArticleId,articleEntity.getId());
@@ -113,11 +125,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articleEntities, ArticleListVo.class);
 
-        articleListVos.stream().forEach(articleListVo -> setTag(articleListVo));
+
+
+
+        articleListVos.forEach(this::setTag);
+        articleListVos.forEach(this::setNickNameAndAvatar);
 
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
 
+
+
         return R.successResult(articleListVoPageVo);
+    }
+
+    /**
+     * 给文章列表添加用户名和头像
+     * @param articleListVo
+     */
+    private void setNickNameAndAvatar(ArticleListVo articleListVo){
+
+        if(Objects.nonNull(articleListVo.getCreateBy())){
+            UserEntity user = userService.getById(articleListVo.getCreateBy());
+            if(Objects.nonNull(user.getAvatar())){
+                articleListVo.setAvatar(user.getAvatar());
+            }
+            if(Objects.nonNull(user.getNickName())){
+                articleListVo.setNickName(user.getNickName());
+            }
+        }
     }
 
     private void setTag(ArticleListVo articleListVo){ //设置对应文章的标签列表
@@ -158,13 +193,27 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         CategoryEntity category = categoryService.getById(articleEntity.getCategoryId());
         articleEntity.setCategoryName(category.getName());
 
-        Integer viewCount = redisCache.getCacheMapValue("article:viewCount", id.toString());
-        if(Objects.nonNull(viewCount)){ //如果redis中读取到观看数就设置反之就使用数据库中的
-            articleEntity.setViewCount(viewCount.longValue());
-        }
+//        Integer viewCount = redisCache.getCacheMapValue("article:viewCount", id.toString());
+//        if(Objects.nonNull(viewCount)){ //如果redis中读取到观看数就设置反之就使用数据库中的
+//            articleEntity.setViewCount(viewCount.longValue());
+//        }
 
         ArticleVo articleVo = BeanCopyUtils.copyBean(articleEntity, ArticleVo.class);
         setTag(articleVo);
+
+        if(Objects.nonNull(articleVo.getCreateBy())){
+            UserEntity user = userService.getById(articleVo.getCreateBy());
+            if(Objects.nonNull(user.getAvatar())){
+                articleVo.setAvatar(user.getAvatar());
+            }
+            if(Objects.nonNull(user.getNickName())){
+                articleVo.setNickName(user.getNickName());
+            }
+        }
+
+        //获取评论数
+        Integer count = commentService.query().eq("article_id", id).count();
+        articleVo.setCommentCount((long)count);
 
         return R.successResult(articleVo);
     }
@@ -172,7 +221,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Override
     public R updateViewCount(Long id) {
         //浏览量加1
-        redisCache.incrementCacheMapValue("article:viewCount",id.toString(),1);
+    /*    redisCache.incrementCacheMapValue("article:viewCount",id.toString(),1);*/
+        boolean b = update().eq("id", id).setSql("view_count=view_count+1").update();
+
+
         return R.successResult();
     }
 
@@ -285,6 +337,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             commentEntityLambdaQueryWrapper.eq(CommentEntity::getArticleId,articleEntity.getId());
             int count = commentService.count(commentEntityLambdaQueryWrapper);
             articleEntity.setCommentCount((long) count);
+
 
         }).collect(Collectors.toList());
 
