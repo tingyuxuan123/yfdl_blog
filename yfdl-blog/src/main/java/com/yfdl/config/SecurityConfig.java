@@ -45,6 +45,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/login").anonymous() //允许所有人访问
                 .antMatchers("/logout").authenticated() //需要认证
+                .antMatchers("/follow").authenticated()
+                .antMatchers("/collect").authenticated()
+                .antMatchers("/collection").authenticated()
+                .antMatchers("/LikesComment").authenticated()
                 .antMatchers("/user/userInfo").authenticated() //获取个人信息
 //                .antMatchers("/upload").authenticated()
                 .anyRequest().permitAll(); //任何请求不需要认证除了上面的

@@ -47,4 +47,9 @@ public class CommentController {
         return commentService.commentList(SystemConstants.LINK_COMMENT,pageNum,pageSize,null);
     }
 
+    @ApiOperation("点赞")
+    @GetMapping("/thumbsUp")
+    public R thumbsUp(@RequestParam Long commentId,@RequestParam Long articleId){
+        return commentService.thumbsUp(commentId,articleId);
+    }
 }

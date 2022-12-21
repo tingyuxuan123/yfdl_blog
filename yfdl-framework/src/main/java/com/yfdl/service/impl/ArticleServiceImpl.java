@@ -1,5 +1,6 @@
 package com.yfdl.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,14 +11,18 @@ import com.yfdl.entity.*;
 import com.yfdl.service.*;
 import com.yfdl.mapper.ArticleMapper;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.utils.JwtUtil;
 import com.yfdl.utils.RedisCache;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.*;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -52,6 +57,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Autowired
     private UserService userService;
 
+    @Resource
+    private LikesService likesService;
+
+    @Resource
+    private CollectService collectService;
+
+
     @Override
     public R<List<ArticleEntity>> hotArticleList() {
 
@@ -71,23 +83,32 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
     /**
      * 查询文章列表
-     * @param title  #文章标题
-     * @param status #文章状态
-     * @param categoryId #文章分类
-     * @param spanId #文章标签id
+     *
+     * @param title       #文章标题
+     * @param status      #文章状态
+     * @param categoryId  #文章分类
+     * @param spanId      #文章标签id
      * @param currentPage
      * @param pageSize
+     * @param userId     #稳赚的创作者
      * @return
      */
     @Override
-    public R<PageVo<ArticleListVo>> articleList(String title,Character status,Long categoryId,Long spanId, Long currentPage, Long pageSize) {
+    public R<PageVo<ArticleListVo>> articleList(String title, Character status, Long categoryId, Long spanId, Long userId, Long currentPage, Long pageSize) {
 
         LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
-        if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为按传输的值搜索
+        if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为空按传输的值搜索
             queryWrapper.eq(ArticleEntity::getStatus,status);
         }
+
+
+
+        //如果标题存在根据标题查询
         queryWrapper.like(Objects.nonNull(title),ArticleEntity::getTitle,title);
-        
+
+        //如果用户id存在根据用户id查询
+        queryWrapper.eq(Objects.nonNull(userId),ArticleEntity::getCreateBy,userId);
+
         if(Objects.nonNull(spanId) && spanId>0){
             LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
             LambdaQueryWrapper<ArticleTagEntity> eq = articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getTagId,spanId);
@@ -138,6 +159,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         return R.successResult(articleListVoPageVo);
     }
 
+
     /**
      * 给文章列表添加用户名和头像
      * @param articleListVo
@@ -186,17 +208,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     @Override
-    public R<ArticleVo> article(Long id) {
+    public R<ArticleVo> article(HttpServletRequest httpServletRequest, Long id) {
+
+        String token = httpServletRequest.getHeader("token");
 
         ArticleEntity articleEntity = getById(id);
 
         CategoryEntity category = categoryService.getById(articleEntity.getCategoryId());
         articleEntity.setCategoryName(category.getName());
 
-//        Integer viewCount = redisCache.getCacheMapValue("article:viewCount", id.toString());
-//        if(Objects.nonNull(viewCount)){ //如果redis中读取到观看数就设置反之就使用数据库中的
-//            articleEntity.setViewCount(viewCount.longValue());
-//        }
+
 
         ArticleVo articleVo = BeanCopyUtils.copyBean(articleEntity, ArticleVo.class);
         setTag(articleVo);
@@ -214,6 +235,41 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         //获取评论数
         Integer count = commentService.query().eq("article_id", id).count();
         articleVo.setCommentCount((long)count);
+
+
+        articleVo.setIsLikes(false);
+        //判断是否登录
+        if(!Objects.isNull(token)){
+            Claims claims;
+            try {
+                claims = JwtUtil.parseJWT(token);
+
+                String userid = claims.getSubject();
+                long userId = Long.parseLong(userid);
+
+
+                //判断是否点赞
+                LikesEntity likes = likesService.query().eq("like_article_id", id).eq("user_id",userId).one();
+                if(ObjectUtil.isNotNull(likes)){
+                    articleVo.setIsLikes(true);
+                }
+
+                //判断是否收藏
+
+                CollectEntity one = collectService.query().eq("create_by", userId).eq("article_id", id).one();
+                if (ObjectUtil.isNotNull(one)) {
+                    articleVo.setIsCollect(true);
+                }
+
+
+            } catch (Exception e) {
+                //出现异常表示为未登录
+            }
+
+        }
+
+
+
 
         return R.successResult(articleVo);
     }
@@ -352,7 +408,31 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
 
+    /**
+     * 弃用
+     */
+    @Override
+    public R<PageVo<ArticleListVo>> articleListByUserId(ArticleEntity articleEntity, Long currentPage, Long pageSize) {
 
+
+        Page<ArticleEntity> articleEntityPage = new Page<>(currentPage,pageSize);
+
+        //设置查询条件
+        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Objects.nonNull(articleEntity.getCreateBy()),ArticleEntity::getCreateBy,articleEntity.getCreateBy());
+
+        //进行分页查询
+        page(articleEntityPage,queryWrapper);
+
+        List<ArticleEntity> articles = articleEntityPage.getRecords();
+
+        //对查询的数据进行处理
+        List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articles, ArticleListVo.class);
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
+
+        return R.successResult(articleListVoPageVo);
+    }
 
 
 }

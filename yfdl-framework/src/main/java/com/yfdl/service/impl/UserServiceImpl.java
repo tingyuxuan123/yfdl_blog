@@ -2,14 +2,16 @@ package com.yfdl.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
-import com.alibaba.fastjson.JSON;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
 import com.yfdl.constants.SystemConstants;
+import com.yfdl.dto.user.ChangePasswordDto;
 import com.yfdl.dto.user.LoginOrRegisterByCodeDto;
 import com.yfdl.dto.user.UserInfoByInsertDto;
 import com.yfdl.dto.user.UserInfoByUpdateDto;
@@ -19,6 +21,7 @@ import com.yfdl.mapper.UserMapper;
 import com.yfdl.utils.*;
 import com.yfdl.vo.*;
 import com.yfdl.vo.user.AuthorInfoByArticleDto;
+import com.yfdl.vo.user.UserInfoByHomePageVo;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +34,7 @@ import org.springframework.util.StringUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -68,6 +72,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     @Resource
     private FollowService followService;
 
+    @Resource
+    private CollectionService collectionService;
+
+    @Resource
+    private SendEmail sendEmail;
 
     @Override
     public R userInfo() {
@@ -77,7 +86,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         UserEntity user = getById(userId);
         UserInfoVo userInfoVo = BeanCopyUtils.copyBean(user, UserInfoVo.class);
         return R.successResult(userInfoVo);
+
     }
+
 
     @Override
     public R updateUserInfo(UserEntity user) {
@@ -167,7 +178,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     }
 
     /**
-     * 更新当前信息
+     * 更新当前登录的用户信息
      * @param user
      * @return
      */
@@ -383,7 +394,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
                 long userId = Long.parseLong(id);
 
                 //1.4 如果登录查找关注表中 是否有关注
-
                 FollowEntity follow = followService.query().eq("user_id", userId).eq("follow_user_id", authorInfoByArticle.getId()).one();
 
                 if (ObjectUtil.isNotNull(follow)){
@@ -401,14 +411,169 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         }
 
-
-
-
-
         return R.successResult(authorInfoByArticle);
     }
 
+    @Override
+    public R userInfoByHomePage(HttpServletRequest httpServletRequest, Long userId) {
+        String token = httpServletRequest.getHeader("token");
 
+        UserEntity user = lambdaQuery().eq(UserEntity::getId, userId).one();
+
+        UserInfoByHomePageVo userInfoByHomePageVo = BeanCopyUtils.copyBean(user, UserInfoByHomePageVo.class);
+
+        //设置关注数
+        Integer count = followService.lambdaQuery().eq(FollowEntity::getUserId, userId).count();
+        userInfoByHomePageVo.setFollowCount(count.longValue());
+
+        //设置被关注数
+        Integer count1 = followService.lambdaQuery().eq(FollowEntity::getFollowUserId, userId).count();
+        userInfoByHomePageVo.setBeFollowCount(count1.longValue());
+
+        //获取文章被点赞数
+        QueryWrapper<ArticleEntity> articleEntityQueryWrapper = new QueryWrapper<>();
+        articleEntityQueryWrapper.eq("create_time",userId)
+                .select("IFNULL(sum(view_count),0) as readCount");
+
+        Map<String, Object> map = articleService.getMap(articleEntityQueryWrapper);
+        long readCount = Long.parseLong(String.valueOf(map.get("readCount")));
+        userInfoByHomePageVo.setReadCount(readCount);
+
+        //获取文章被阅读数
+        QueryWrapper<ArticleEntity> articleEntityQueryWrapper1 = new QueryWrapper<>();
+        articleEntityQueryWrapper1.eq("create_time",userId)
+                .select("IFNULL(sum(likes_count),0) as likesCount");
+
+        Map<String, Object> map1 = articleService.getMap(articleEntityQueryWrapper1);
+        long likesCount = Long.parseLong(String.valueOf(map1.get("likesCount")));
+        userInfoByHomePageVo.setLikesCount(likesCount);
+
+
+        //获取用户创建的收藏夹数
+        Integer count2 = collectionService.lambdaQuery().eq(CollectionEntity::getUserId, userId).count();
+        userInfoByHomePageVo.setCollectionCount(count2.longValue());
+
+
+        //判断是否关注
+        //判断 是否登录
+        if(!Objects.isNull(token)){
+            Claims claims;
+            try {
+                claims = JwtUtil.parseJWT(token);
+
+                String id = claims.getSubject();
+                long loginId = Long.parseLong(id);
+
+                //1.4 如果登录查找关注表中 是否有关注
+                FollowEntity follow = followService.query().eq("user_id", loginId).eq("follow_user_id", userId).one();
+
+                if (ObjectUtil.isNotNull(follow)){
+                    //1.5 不为空
+                    userInfoByHomePageVo.setIsFollow(true);
+                }else {
+                    userInfoByHomePageVo.setIsFollow(false);
+                }
+
+            } catch (Exception e) {
+                //出现异常表示为未登录
+                userInfoByHomePageVo.setIsFollow(false);
+                return R.successResult(userInfoByHomePageVo);
+            }
+
+        }
+
+        return R.successResult(userInfoByHomePageVo);
+    }
+
+    @Override
+    public R updateEmail(String email, String code) {
+
+        String redisCode = stringRedisTemplate.opsForValue().get(RedisConstant.BLOG_LOGIN_CODE + email);
+
+        //有一个为空就返回验证失败
+        if(ObjectUtil.isNull(code) || ObjectUtil.isNull(redisCode) || !ObjectUtil.equal(code,redisCode)){
+           return R.errorResult(400,"验证码错误");
+        }
+
+        Long userId = SecurityUtils.getUserId();
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(userId);
+        userEntity.setEmail(email);
+        boolean b = updateById(userEntity);
+        if(b){
+            return R.successResult();
+        }else {
+           return R.errorResult(400,"邮箱修改失败，请重试!");
+        }
+    }
+
+    @Override
+    public R unbindingEmail() {
+        Long userId = SecurityUtils.getUserId();
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(userId);
+        userEntity.setEmail("");
+        boolean b = updateById(userEntity);
+        if(b){
+            return R.successResult();
+        }else {
+            return R.errorResult(400,"出现错误");
+        }
+
+
+    }
+
+    @Override
+    public R sendCode(String email) {
+        try{
+
+            String code = stringRedisTemplate.opsForValue().get(RedisConstant.BLOG_LOGIN_CODE + email);
+
+            if (!StrUtil.isEmpty(code)) {
+                return R.errorResult(400,"获取验证码过于频繁");
+            }
+
+            sendEmail.sendEmail(email);
+        }catch(Exception e){
+            throw new SystemException(AppHttpCodeEnum.SYSTEM_ERROR);
+        }
+
+        return R.successResult("验证码发送成功！");
+    }
+
+    @Override
+    public R sendCodeNeedVerify(String email) {
+        //查询该email是否已经被使用
+        UserEntity user = lambdaQuery().eq(UserEntity::getEmail, email).one();
+        if(ObjectUtil.isNotNull(user)){
+            return R.errorResult(400,"该邮箱已被使用!");
+        }
+        //没有被使用过就发送验证码
+        return sendCode(email);
+    }
+
+    @Override
+    public R changePassword(ChangePasswordDto changePassword) {
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+
+        //验证用户和上传的密码是否正确
+//        String cpwd = passwordEncoder.encode(changePassword.getPassword());//
+
+
+        boolean isSame = passwordEncoder.matches(changePassword.getPassword(),loginUser.getUser().getPassword());
+        //如果相同改变密码
+        if(isSame){
+            UserEntity userEntity = new UserEntity();
+            userEntity.setId(loginUser.getUser().getId());
+            userEntity.setPassword(passwordEncoder.encode(changePassword.getNewPassword()));
+            boolean b = updateById(userEntity);
+            return R.successResult("密码修改成功");
+        }else{
+            //密码不正确
+            return R.errorResult(400,"密码不正确,请重试!");
+        }
+
+    }
 
 
     public boolean userNameExist(String username){

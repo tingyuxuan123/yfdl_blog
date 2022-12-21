@@ -5,6 +5,7 @@ import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
 import com.yfdl.dto.LoginDto;
+import com.yfdl.dto.user.ChangePasswordDto;
 import com.yfdl.dto.user.LoginOrRegisterByCodeDto;
 import com.yfdl.entity.UserEntity;
 import com.yfdl.service.BlogLoginService;
@@ -15,6 +16,7 @@ import com.yfdl.utils.SendEmail;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +32,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Resource
-    private SendEmail sendEmail;
+
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -39,16 +40,19 @@ public class UserController {
     @Resource
     private BlogLoginService blogLoginService;
 
+    @ApiOperation("获取登录用户的详细信息,需要登录")
     @GetMapping("/userInfo")
     public R userInfo(){
         return userService.userInfo();
     }
 
+    @ApiOperation("修改登录用户的详细信息,需要登录")
     @PutMapping("/userInfo")
     public R userInfo(@RequestBody UserEntity user){
         return userService.updateUserInfo(user);
     }
 
+    @ApiOperation("简单的注册")
     @PostMapping("/register")
     public R register(@RequestBody UserEntity user){
         return userService.register(user);
@@ -58,24 +62,17 @@ public class UserController {
     /**
      * 发送验证码
      */
-    @ApiOperation("发送验证码")
+    @ApiOperation("发送验证码，不用验证邮箱是否使用")
     @GetMapping("/sendCode")
-    public R login(@RequestParam String email){
-        try{
-            String code = stringRedisTemplate.opsForValue().get(RedisConstant.BLOG_LOGIN_CODE + email);
-
-            if (!StrUtil.isEmpty(code)) {
-                return R.errorResult(400,"获取验证码过于频繁");
-            }
-
-            sendEmail.sendEmail(email);
-        }catch(Exception e){
-            throw new SystemException(AppHttpCodeEnum.SYSTEM_ERROR);
-        }
-
-        return R.successResult("验证码发送成功！");
+    public R sendCode(@RequestParam String email){
+        return userService.sendCode(email);
     }
 
+    @ApiOperation("发送验证码，需要验证码邮箱没有被使用过")
+    @GetMapping("/sendCodeNeedVerify")
+    public R sendCodeNeedVerify(@RequestParam String email){
+        return userService.sendCodeNeedVerify(email);
+    }
 
     /**
      * 用户登录
@@ -101,10 +98,45 @@ public class UserController {
         return blogLoginService.logout();
     }
 
-    @ApiOperation("获取说看文章的作者信息")
+    @ApiOperation("获取观看文章的作者信息")
     @GetMapping("/authorInfoByArticle")
     public R authorInfoByArticle(HttpServletRequest httpServletRequest, @RequestParam Long articleId){
         return userService.authorInfoByArticle(httpServletRequest,articleId);
     }
 
+    @ApiOperation("获取用户得详细信息,主页展示")
+    @GetMapping("/userInfoByHomePage")
+    public R userInfoByHomePage(HttpServletRequest httpServletRequest, @RequestParam Long userId){
+        return userService.userInfoByHomePage(httpServletRequest,userId);
+    }
+
+    @ApiOperation("更新用户信息,需要登录")
+    @PostMapping("/updateUserInfo")
+    public R updateUserInfo(@RequestBody UserEntity user){
+        /**
+         * 更新用户信息,不能直接设置用户，名手机号，设置密码
+         */
+        user.setEmail(null);
+        user.setPhonenumber(null);
+        user.setPassword(null);
+        return userService.updateInfo(user);
+    }
+
+    @ApiOperation("绑定邮箱,需要登录")
+    @GetMapping("/updateEmail")
+    public R updateEmail(@RequestParam String email , @RequestParam String code){
+        return userService.updateEmail(email,code);
+    }
+
+    @ApiOperation("解除邮箱绑定,需要登录")
+    @GetMapping("/unbindingEmail")
+    public R unbindingEmail(){
+        return userService.unbindingEmail();
+    }
+
+    @ApiOperation("修改密码")
+    @PostMapping("/changePassword")
+    public R changePassword(@RequestBody ChangePasswordDto changePassword) {
+        return userService.changePassword(changePassword);
+    }
 }

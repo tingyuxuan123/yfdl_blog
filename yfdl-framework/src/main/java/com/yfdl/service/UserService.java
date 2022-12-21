@@ -2,6 +2,7 @@ package com.yfdl.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yfdl.common.R;
+import com.yfdl.dto.user.ChangePasswordDto;
 import com.yfdl.dto.user.LoginOrRegisterByCodeDto;
 import com.yfdl.dto.user.UserInfoByInsertDto;
 import com.yfdl.dto.user.UserInfoByUpdateDto;
@@ -40,4 +41,17 @@ public interface UserService extends IService<UserEntity> {
     R loginOrRegisterByCode(LoginOrRegisterByCodeDto loginOrRegisterByCodeDto);
 
     R authorInfoByArticle(HttpServletRequest httpServletRequest, Long articleId);
+
+    R userInfoByHomePage(HttpServletRequest httpServletRequest, Long userId);
+
+    R updateEmail(String email, String code);
+
+
+    R unbindingEmail();
+
+    R sendCode(String email);
+
+    R sendCodeNeedVerify(String email);
+
+    R changePassword(ChangePasswordDto changePassword);
 }

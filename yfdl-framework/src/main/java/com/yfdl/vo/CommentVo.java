@@ -78,5 +78,7 @@ public class CommentVo {
      */
     private Date createTime;
 
+    private Integer likesCount;
+
 
 }

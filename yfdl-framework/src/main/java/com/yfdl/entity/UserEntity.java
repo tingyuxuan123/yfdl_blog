@@ -73,6 +73,14 @@ public class UserEntity implements Serializable {
      */
     private String avatar;
 
+    private String github;
+
+    private String homepage;
+
+    private String position;
+
+    private String company;
+
     /**
      * 个人说明
      */

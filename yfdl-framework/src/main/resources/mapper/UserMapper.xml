@@ -14,7 +14,7 @@
             sg_article,
             sys_user
         WHERE
-            sg_article.category_id = sys_user.id
+            sg_article.create_by = sys_user.id
           AND sys_user.id = #{id};
     </select>
 </mapper>

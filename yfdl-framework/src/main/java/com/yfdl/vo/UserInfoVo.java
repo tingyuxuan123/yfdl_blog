@@ -32,6 +32,21 @@ public class UserInfoVo {
 
 
     /**
+     * 手机号
+     */
+    private String phonenumber;
+
+
+
+    private String github;
+
+    private String homepage;
+
+    private String position;
+
+    private String company;
+
+    /**
      * 个人说明
      */
     private String label;

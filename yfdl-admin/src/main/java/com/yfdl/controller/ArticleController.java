@@ -9,6 +9,8 @@ import io.swagger.annotations.ApiModelProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/article")
 public class ArticleController {
@@ -23,7 +25,7 @@ public class ArticleController {
                                                 @RequestParam(defaultValue = "1") Long currentPage,
                                                 @RequestParam(defaultValue = "10") Long pageSize){
         //查询对分类下的文章列表
-        return articleService.articleList(title,status,categoryId,spanId,currentPage,pageSize);
+        return articleService.articleList(title,status,categoryId,spanId,currentPage,pageSize, pageSize);
     }
 
     @ApiModelProperty("后台文章列表只能获取对应的id的")
@@ -41,8 +43,8 @@ public class ArticleController {
 
 
     @GetMapping("articleInfo")
-    public R article(@RequestParam Long id){
-        return articleService.article(id);
+    public R article(HttpServletRequest httpServletRequest , @RequestParam Long id){
+        return articleService.article(httpServletRequest, id);
     }
 
     @PostMapping("updateArticle")

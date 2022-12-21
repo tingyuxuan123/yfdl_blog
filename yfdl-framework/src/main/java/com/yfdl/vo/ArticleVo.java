@@ -23,12 +23,7 @@ public class ArticleVo {
     /**
      * 文章id
      */
-
     private Long id;
-
-    /**
-     *
-     */
 
     /**
      * 标题
@@ -56,6 +51,11 @@ public class ArticleVo {
     private Long likesCount;
 
     /**
+     * 是否点赞
+     */
+    private Boolean isLikes;
+
+    /**
      * 评论数
      */
     private Long commentCount;
@@ -64,7 +64,6 @@ public class ArticleVo {
     /**
      * 分类名，表中不存在
      */
-    @TableField(exist = false)
     private String categoryName;
 
     /**
@@ -72,7 +71,10 @@ public class ArticleVo {
      */
     private String thumbnail;
 
-
+    /**
+     * 是否收藏
+     */
+    private Boolean isCollect=false;
 
     /**
      * 标签
@@ -104,5 +106,6 @@ public class ArticleVo {
     private Long createBy;
 
     private Date createTime;
+
 
 }

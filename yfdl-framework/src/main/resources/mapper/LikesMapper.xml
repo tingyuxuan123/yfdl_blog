@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yfdl.mapper.LikesMapper">
+    <select id="getLikesList" resultType="com.yfdl.entity.LikesEntity">
+        SELECT
+            *
+        FROM
+            sg_article
+        WHERE
+                sg_article.id IN ( SELECT like_article_id FROM sg_likes WHERE sg_likes.user_id = #{userId} AND del_flag = '0' )
+          AND sg_article.del_flag = '0'
+    </select>
+</mapper>

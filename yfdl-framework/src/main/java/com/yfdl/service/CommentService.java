@@ -14,4 +14,6 @@ public interface CommentService extends IService<CommentEntity> {
     R commentList(char commentType, Long pageNum, Long pageSize,Long articleId);
 
     R comment(CommentEntity commentEntity);
+
+    R thumbsUp(Long commentId, Long articleId);
 }

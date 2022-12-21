@@ -2,6 +2,8 @@ package com.yfdl.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yfdl.entity.FollowEntity;
+import com.yfdl.vo.follow.FollowListVo;
+import com.yfdl.vo.user.AuthorInfoByArticleDto;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -12,4 +14,5 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface FollowMapper extends BaseMapper<FollowEntity> {
+    FollowListVo[] getFollowList(Long id);
 }
