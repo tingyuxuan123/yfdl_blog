@@ -334,9 +334,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
             userEntity.setNickName(defaultNicknamePrefix+ RandomUtil.randomString(10));
             userEntity.setAvatar(defaultAvatar);
             userEntity.setPassword(passwordEncoder.encode(InitPassword));
-            String[] split = email.split("@");
+//            String[] split = email.split("@");
+            while (true){
+                //随机生成一个12位账号
+                Long aLong = accountGenerator();
+                //查询该账号是否存在
+                UserEntity oneUser = query().eq("user_name", aLong).one();
+                if(ObjectUtil.isNull(oneUser)) {
+                    //为空设置账号
+                    userEntity.setUserName(aLong.toString());
+                    break;
+                }
+                //反之循环重新生成
+            }
 
-            userEntity.setUserName(split[0]);
+
             boolean save = save(userEntity);
 
 
@@ -366,6 +378,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
 
     }
+
+    /**
+     * 随机生成一个账号
+     * @return
+     */
+    public Long accountGenerator(){
+        char[] nums= {'0','1','2','3','4','5','6','7','8','9'};
+        Long account=null;
+        Long startAccount= 100000000000L;
+        String endAccount="";
+        for (int i = 0; i < 11; i++) {
+            int i1 = RandomUtil.randomInt(10);
+            endAccount+=nums[i1];
+        }
+        account = startAccount | Long.parseLong(endAccount);
+
+        return account;
+    }
+
+
 
     @Override
     public R authorInfoByArticle(HttpServletRequest httpServletRequest, Long articleId) {

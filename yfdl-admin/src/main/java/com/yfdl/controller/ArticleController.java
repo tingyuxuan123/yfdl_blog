@@ -17,16 +17,16 @@ public class ArticleController {
 
     @Autowired private ArticleService articleService;
 
-    @GetMapping("articleList")
-    public R<PageVo<ArticleListVo>> articleList(@RequestParam(required = false) String title,
-                                                @RequestParam(required = false) Character status,
-                                                @RequestParam(required = false) Long categoryId ,
-                                                @RequestParam(required = false) Long spanId,
-                                                @RequestParam(defaultValue = "1") Long currentPage,
-                                                @RequestParam(defaultValue = "10") Long pageSize){
-        //查询对分类下的文章列表
-        return articleService.articleList(title,status,categoryId,spanId,currentPage,pageSize, pageSize);
-    }
+//    @GetMapping("articleList")
+//    public R<PageVo<ArticleListVo>> articleList(@RequestParam(required = false) String title,
+//                                                @RequestParam(required = false) Character status,
+//                                                @RequestParam(required = false) Long categoryId ,
+//                                                @RequestParam(required = false) Long spanId,
+//                                                @RequestParam(defaultValue = "1") Long currentPage,
+//                                                @RequestParam(defaultValue = "10") Long pageSize){
+//        //查询对分类下的文章列表
+//        return articleService.articleList(title,status,categoryId,spanId,currentPage,pageSize, pageSize);
+//    }
 
     @ApiModelProperty("后台文章列表只能获取对应的id的")
     @GetMapping("adminArticleList")

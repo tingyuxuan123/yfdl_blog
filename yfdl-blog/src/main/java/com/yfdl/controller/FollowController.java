@@ -31,4 +31,10 @@ public class FollowController {
     public R followList(@RequestParam Long id){
         return followService.followList(id);
     }
+
+    @ApiOperation("获取登录用户关注的id列表")
+    @GetMapping("/getFollowIds")
+    public R getFollowIds(){
+        return followService.getFollowIds();
+    }
 }

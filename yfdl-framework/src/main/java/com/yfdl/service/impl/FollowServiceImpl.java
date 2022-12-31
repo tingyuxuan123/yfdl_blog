@@ -40,12 +40,9 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, FollowEntity> i
             followEntity.setUserId(userId);
             followEntity.setFollowUserId(followId);
             boolean save = save(followEntity);
-
-
         }else {
             //2.如果关注 ，取消关注
             boolean b = removeById(follow.getId());
-
         }
         //4.返回操作后的状态
         return R.successResult();
@@ -59,5 +56,12 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, FollowEntity> i
 
 
         return R.successResult(followList);
+    }
+
+    @Override
+    public R getFollowIds() {
+        Long userId = SecurityUtils.getUserId();
+        Long[] ids= baseMapper.getFollowIds(userId);
+        return R.successResult(ids);
     }
 }

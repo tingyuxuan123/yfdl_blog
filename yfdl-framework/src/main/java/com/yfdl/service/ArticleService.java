@@ -34,4 +34,10 @@ public interface ArticleService extends IService<ArticleEntity> {
     R<PageVo<ArticleListVo>> adminArticleList(String title, Character status, Long categoryId, Long spanId, Long currentPage, Long pageSize);
 
     R<PageVo<ArticleListVo>> articleListByUserId(ArticleEntity userId, Long currentPage, Long pageSize);
+
+    R articleListByUserLikes(Long userId);
+
+    R articleListByRecommended(Long currentPage, Long pageSize);
+
+    R articleListByNew(Long currentPage, Long pageSize);
 }

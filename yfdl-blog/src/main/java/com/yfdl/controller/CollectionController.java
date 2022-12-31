@@ -21,8 +21,9 @@ public class CollectionController {
 
     @ApiOperation("获取收藏夹列表,需要登录")
     @GetMapping("collectionList")
-    public R collectionList(){
-        return collectionService.collectionList();
+    public R collectionList(@RequestParam(required = false) Long id){
+
+        return collectionService.collectionList(id);
     }
 
     @ApiOperation("创建收藏夹")

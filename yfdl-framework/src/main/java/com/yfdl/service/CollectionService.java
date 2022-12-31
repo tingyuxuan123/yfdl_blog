@@ -11,7 +11,7 @@ import com.yfdl.entity.CollectionEntity;
  * @since 2022-11-13 20:06:33
  */
 public interface CollectionService extends IService<CollectionEntity> {
-    R collectionList();
+    R collectionList(Long id);
 
     R createCollection(CollectionEntity collectionEntity);
 

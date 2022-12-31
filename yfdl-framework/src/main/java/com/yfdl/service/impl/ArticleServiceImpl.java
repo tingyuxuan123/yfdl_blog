@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -82,7 +83,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     /**
-     * 查询文章列表
+     * 查询文章列表(前台)
      *
      * @param title       #文章标题
      * @param status      #文章状态
@@ -99,9 +100,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
         if(Objects.nonNull(status) && (status=='0' || status=='1')){  //状态不为空按传输的值搜索
             queryWrapper.eq(ArticleEntity::getStatus,status);
+        }else{
+            queryWrapper.eq(ArticleEntity::getStatus,'0');
         }
-
-
 
         //如果标题存在根据标题查询
         queryWrapper.like(Objects.nonNull(title),ArticleEntity::getTitle,title);
@@ -143,14 +144,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         }).collect(Collectors.toList());
 
-
         List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articleEntities, ArticleListVo.class);
-
-
 
 
         articleListVos.forEach(this::setTag);
         articleListVos.forEach(this::setNickNameAndAvatar);
+        articleListVos.forEach(this::setCommentCount);
 
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
 
@@ -175,6 +174,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                 articleListVo.setNickName(user.getNickName());
             }
         }
+    }
+
+    private void setCommentCount(ArticleListVo articleListVo){
+        Integer count = commentService.query().eq("article_id", articleListVo.getId()).count();
+        articleListVo.setCommentCount(count);
     }
 
     private void setTag(ArticleListVo articleListVo){ //设置对应文章的标签列表
@@ -206,6 +210,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         articleVo.setTags(tagListVos);
 
     }
+
+
 
     @Override
     public R<ArticleVo> article(HttpServletRequest httpServletRequest, Long id) {
@@ -430,6 +436,51 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articles, ArticleListVo.class);
 
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
+
+        return R.successResult(articleListVoPageVo);
+    }
+
+    @Override
+    public R articleListByUserLikes(Long userId) {
+       ArticleListVo[] articleListVos= baseMapper.articleListByUserLikes(userId);
+
+       Arrays.stream(articleListVos).forEach(this::setTag);
+
+
+        return R.successResult(articleListVos);
+    }
+
+    @Override
+    public R articleListByRecommended(Long currentPage, Long pageSize) {
+
+        Long skipNumber =(currentPage-1) * pageSize;
+
+        //获取推荐文章列表
+        ArticleListVo[] articleListVos= baseMapper.articleListByRecommended(skipNumber,pageSize);
+
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+        return R.successResult(articleListVoPageVo);
+    }
+
+    @Override
+    public R articleListByNew(Long currentPage, Long pageSize) {
+        Long skipNumber =(currentPage-1) * pageSize;
+        ArticleListVo[] articleListVos= baseMapper.articleListByNew(skipNumber,pageSize);
+        Arrays.stream(articleListVos).forEach(this::setTag);
+
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
 
         return R.successResult(articleListVoPageVo);
     }

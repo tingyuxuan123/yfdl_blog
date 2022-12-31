@@ -15,4 +15,6 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface FollowMapper extends BaseMapper<FollowEntity> {
     FollowListVo[] getFollowList(Long id);
+
+    Long[] getFollowIds(Long userId);
 }

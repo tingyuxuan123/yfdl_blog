@@ -14,4 +14,6 @@ public interface FollowService extends IService<FollowEntity> {
     R follow(Long followId);
 
     R followList(Long id);
+
+    R getFollowIds();
 }

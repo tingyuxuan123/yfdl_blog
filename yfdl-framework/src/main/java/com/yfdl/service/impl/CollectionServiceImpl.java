@@ -1,11 +1,11 @@
 package com.yfdl.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.R;
 import  com.yfdl.service.CollectionService;
 import com.yfdl.mapper.CollectionMapper;
 import com.yfdl.entity.CollectionEntity;
-import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.collection.CollectionListVo;
 import org.springframework.stereotype.Service;
@@ -21,9 +21,16 @@ import java.util.List;
 @Service
 public class CollectionServiceImpl extends ServiceImpl<CollectionMapper, CollectionEntity> implements CollectionService {
     @Override
-    public R collectionList() {
+    public R collectionList(Long id) {
+        Long userId;
 
-        Long userId = SecurityUtils.getUserId();
+        //传了id使用传的id
+        userId=id;
+
+        if(ObjectUtil.isNull(id)){  //如果没传id,使用登录的id
+            userId = SecurityUtils.getUserId();
+        }
+
 
         List<CollectionListVo> collectionListVos = baseMapper.collectionList(userId);
 

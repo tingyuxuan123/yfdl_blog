@@ -7,6 +7,7 @@ import com.yfdl.service.ArticleService;
 import com.yfdl.vo.ArticleListVo;
 import com.yfdl.vo.ArticleVo;
 import com.yfdl.vo.PageVo;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpRequest;
@@ -64,5 +65,25 @@ public class ArticleController {
     }
 
 
+    @ApiOperation("根据用户id获取点赞文章列表")
+    @GetMapping("articleListByUserLikes")
+    public R articleListByUserLikes(@RequestParam Long userId){
+        return articleService.articleListByUserLikes(userId);
+    }
+
+    @ApiOperation("获取推荐文章列表")
+    @GetMapping("articleListByRecommended")
+    public R articleListByRecommended(@RequestParam(defaultValue = "1") Long currentPage,
+                                      @RequestParam(defaultValue = "10") Long pageSize){
+
+        return articleService.articleListByRecommended(currentPage,pageSize);
+    }
+
+    @ApiOperation("获取最新文章列表")
+    @GetMapping("articleListByNew")
+    public R articleListByNew(@RequestParam(defaultValue = "1") Long currentPage,
+                              @RequestParam(defaultValue = "10") Long pageSize){
+        return articleService.articleListByNew(currentPage,pageSize);
+    }
 
 }

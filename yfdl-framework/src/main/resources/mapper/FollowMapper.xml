@@ -28,4 +28,7 @@
         GROUP BY
             sys_user.id
     </select>
+    <select id="getFollowIds" resultType="Long">
+        SELECT follow_user_id  from sg_follow WHERE user_id= #{userId} and sg_follow.del_flag=0
+    </select>
 </mapper>
