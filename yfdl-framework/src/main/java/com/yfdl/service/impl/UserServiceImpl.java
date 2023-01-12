@@ -350,6 +350,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
 
             boolean save = save(userEntity);
+            //设置,默认权限
+            UserRoleEntity userRoleEntity = new UserRoleEntity();
+            userRoleEntity.setUserId(userEntity.getId());
+            userRoleEntity.setRoleId(3L); //默认权限
+            userRoleService.save(userRoleEntity);
 
 
             if(save){

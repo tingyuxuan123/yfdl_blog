@@ -6,6 +6,7 @@ import com.yfdl.service.ArticleService;
 import com.yfdl.vo.ArticleListVo;
 import com.yfdl.vo.PageVo;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,16 +18,6 @@ public class ArticleController {
 
     @Autowired private ArticleService articleService;
 
-//    @GetMapping("articleList")
-//    public R<PageVo<ArticleListVo>> articleList(@RequestParam(required = false) String title,
-//                                                @RequestParam(required = false) Character status,
-//                                                @RequestParam(required = false) Long categoryId ,
-//                                                @RequestParam(required = false) Long spanId,
-//                                                @RequestParam(defaultValue = "1") Long currentPage,
-//                                                @RequestParam(defaultValue = "10") Long pageSize){
-//        //查询对分类下的文章列表
-//        return articleService.articleList(title,status,categoryId,spanId,currentPage,pageSize, pageSize);
-//    }
 
     @ApiModelProperty("后台文章列表只能获取对应的id的")
     @GetMapping("adminArticleList")
@@ -60,5 +51,11 @@ public class ArticleController {
     @GetMapping("deleteArticle")
     public R deleteArticle(@RequestParam Long id){
         return R.successResult(articleService.removeById(id));
+    }
+
+    @ApiOperation("获取需要审核的文章列表")
+    @GetMapping("articleAuditList")
+    public R articleAuditList(@RequestParam Long currentPage,@RequestParam Long pageSize){
+        return articleService.articleAuditList(currentPage,pageSize);
     }
 }

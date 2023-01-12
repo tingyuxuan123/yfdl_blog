@@ -75,6 +75,10 @@ public class CommentEntity implements Serializable {
     * 点赞数
     */
 
-            private Integer likesCount;
+        private Integer likesCount;
 
+    /**
+     * 0通过 1未通过
+     * */
+    private Integer audit;
 }

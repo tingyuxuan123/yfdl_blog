@@ -5,6 +5,7 @@ import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
 import com.yfdl.dto.LoginDto;
+import com.yfdl.dto.user.LoginOrRegisterByCodeDto;
 import com.yfdl.dto.user.UserInfoByInsertDto;
 import com.yfdl.dto.user.UserInfoByUpdateDto;
 import com.yfdl.entity.UserEntity;
@@ -13,6 +14,7 @@ import com.yfdl.service.UserService;
 import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.utils.RedisConstant;
 import com.yfdl.utils.SendEmail;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +48,19 @@ public class UserController {
     public R login(@RequestBody LoginDto loginDto){
         UserEntity userEntity = BeanCopyUtils.copyBean(loginDto, UserEntity.class);
         return adminLoginService.login(userEntity);
+    }
+
+    @ApiOperation("发送验证码，不用验证邮箱是否使用")
+    @GetMapping("/user/sendCode")
+    public R sendCode(@RequestParam String email){
+        return userService.sendCode(email);
+    }
+
+
+    @ApiOperation("根据验证码登录或注册")
+    @PostMapping("/user/loginOrRegisterByCode")
+    public R loginOrRegisterByCode(@RequestBody LoginOrRegisterByCodeDto loginOrRegisterByCodeDto){
+        return  userService.loginOrRegisterByCode(loginOrRegisterByCodeDto);
     }
 
     /**

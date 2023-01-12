@@ -105,6 +105,22 @@
             sg_article.create_time DESC
         LIMIT #{skipNumber} , #{pageSize}
     </select>
+    <select id="articleAuditList" resultType="com.yfdl.vo.article.ArticleAudit">
+        SELECT
+            id,
+            title,
+            is_top,
+            audit,
+            create_time,
+            update_time
+        FROM
+            sg_article
+        WHERE
+            sg_article.`status` = 0
+          AND sg_article.audit = 1
+          AND del_flag =0
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
 
 
 </mapper>

@@ -40,4 +40,6 @@ public interface ArticleService extends IService<ArticleEntity> {
     R articleListByRecommended(Long currentPage, Long pageSize);
 
     R articleListByNew(Long currentPage, Long pageSize);
+
+    R articleAuditList(Long currentPage, Long pageSize);
 }

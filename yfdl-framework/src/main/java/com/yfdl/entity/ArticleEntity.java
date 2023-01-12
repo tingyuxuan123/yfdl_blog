@@ -107,4 +107,10 @@ public class ArticleEntity implements Serializable {
      */
     private Integer delFlag;
 
+
+    /**
+     * 0通过 1未通过
+     * */
+    private Integer audit;
+
 }

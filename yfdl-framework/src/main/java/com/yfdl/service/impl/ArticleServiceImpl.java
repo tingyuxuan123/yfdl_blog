@@ -15,6 +15,7 @@ import com.yfdl.utils.JwtUtil;
 import com.yfdl.utils.RedisCache;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.*;
+import com.yfdl.vo.article.ArticleAudit;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -483,6 +484,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
 
         return R.successResult(articleListVoPageVo);
+    }
+
+    @Override
+    public R articleAuditList(Long currentPage, Long pageSize) {
+        Long skipNumber =(currentPage-1) * pageSize;
+        ArticleAudit[] articleAudit =baseMapper.articleAuditList(skipNumber,pageSize);
+        return R.successResult(articleAudit);
     }
 
 

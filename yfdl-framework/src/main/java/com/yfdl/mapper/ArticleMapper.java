@@ -3,6 +3,7 @@ package com.yfdl.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yfdl.entity.ArticleEntity;
 import com.yfdl.vo.ArticleListVo;
+import com.yfdl.vo.article.ArticleAudit;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -21,4 +22,6 @@ public interface ArticleMapper extends BaseMapper<ArticleEntity> {
     Long getCount();
 
     ArticleListVo[] articleListByNew(@Param("skipNumber") Long skipNumber, @Param("pageSize") Long pageSize);
+
+    ArticleAudit[] articleAuditList(@Param("skipNumber") Long skipNumber, @Param("pageSize") Long pageSize);
 }
