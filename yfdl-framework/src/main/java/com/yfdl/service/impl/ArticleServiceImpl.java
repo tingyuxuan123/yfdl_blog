@@ -16,6 +16,7 @@ import com.yfdl.utils.RedisCache;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.*;
 import com.yfdl.vo.article.ArticleAudit;
+import com.yfdl.vo.collection.CollectionInfoVo;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Resource
     private CollectService collectService;
 
+    @Resource
+    private CollectionService collectionService;
 
     @Override
     public R<List<ArticleEntity>> hotArticleList() {
@@ -72,7 +75,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
 
         queryWrapper.eq(ArticleEntity::getStatus, SystemConstants.ARTICLE_STATUS_NORMAL);
-        queryWrapper.orderByDesc(ArticleEntity::getViewCount);
+        queryWrapper.eq(ArticleEntity::getAudit ,0); //要求过审
+        queryWrapper.orderByDesc(ArticleEntity::getViewCount); //按照观看量从大到小排序
         Page<ArticleEntity> articleEntityPage = new Page<>(1, 10);
         Page<ArticleEntity> page = page(articleEntityPage, queryWrapper);
 
@@ -92,7 +96,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
      * @param spanId      #文章标签id
      * @param currentPage
      * @param pageSize
-     * @param userId     #稳赚的创作者
+     * @param userId     #文章的创作者
      * @return
      */
     @Override
@@ -178,7 +182,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     private void setCommentCount(ArticleListVo articleListVo){
-        Integer count = commentService.query().eq("article_id", articleListVo.getId()).count();
+        Integer count = commentService.query()
+                .eq("article_id", articleListVo.getId())
+                .eq("del_flag",0)
+                .in("audit",0,1).count();
+
+
         articleListVo.setCommentCount(count);
     }
 
@@ -313,6 +322,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                 articleTagService.save(articleTagEntity);
             });
         }
+
+        //把审核状态变为待审核，需要重新审核
+        articleEntity.setAudit(1);
+
         boolean b = updateById(articleEntity);
         return R.successResult();
     }
@@ -407,12 +420,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         List<ArticleListVo> articleListVos = BeanCopyUtils.copyBeanList(articleEntities, ArticleListVo.class);
 
-        articleListVos.stream().forEach(articleListVo -> setTag(articleListVo));
+        articleListVos.stream().forEach(this::setTag);
+        articleListVos.stream().forEach(this::setCommentCount);
 
         PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos, articleEntityPage.getTotal());
 
         return R.successResult(articleListVoPageVo);
     }
+
+
 
 
     /**
@@ -458,10 +474,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         //获取推荐文章列表
         ArticleListVo[] articleListVos= baseMapper.articleListByRecommended(skipNumber,pageSize);
-
-        Arrays.stream(articleListVos).forEach(this::setTag);
         //获取复合条件的总数
         Long total= baseMapper.getCount();
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
         //转成list
         List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
 
@@ -474,10 +491,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     public R articleListByNew(Long currentPage, Long pageSize) {
         Long skipNumber =(currentPage-1) * pageSize;
         ArticleListVo[] articleListVos= baseMapper.articleListByNew(skipNumber,pageSize);
-        Arrays.stream(articleListVos).forEach(this::setTag);
-
         //获取复合条件的总数
         Long total= baseMapper.getCount();
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+        return R.successResult(articleListVoPageVo);
+    }
+
+
+    @Override
+    public R articleListByDynamic(Long currentPage, Long pageSize) {
+        Long skipNumber =(currentPage-1) * pageSize;
+
+        Long userId = SecurityUtils.getUserId();
+
+        ArticleListVo[] articleListVos= baseMapper.articleListByDynamic(skipNumber,pageSize,userId);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+
         //转成list
         List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
 
@@ -487,11 +528,209 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     @Override
-    public R articleAuditList(Long currentPage, Long pageSize) {
+    public R articleListByTag(Long spanId, Long currentPage, Long pageSize) {
+
         Long skipNumber =(currentPage-1) * pageSize;
-        ArticleAudit[] articleAudit =baseMapper.articleAuditList(skipNumber,pageSize);
-        return R.successResult(articleAudit);
+
+
+        ArticleListVo[] articleListVos= baseMapper.articleListByTag(skipNumber,pageSize,spanId);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+        return R.successResult(articleListVoPageVo);
+
     }
+
+    /**
+     *  文章管理的文章列表
+     * @param title
+     * @param categoryId
+     * @param spanId
+     * @param currentPage
+     * @param pageSize
+     * @return
+     */
+    @Override
+    public R adminAllArticleList(String title, Long categoryId, Long spanId, Long currentPage, Long pageSize) {
+
+        Long skipNumber =(currentPage-1) * pageSize;
+
+        //获取推荐文章列表
+        ArticleListVo[] articleListVos= baseMapper.adminAllArticleList(skipNumber,pageSize,title,categoryId,spanId);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+        return R.successResult(articleListVoPageVo);
+
+    }
+
+    @Override
+    @Transactional
+    public R articleListByCollection(Long currentPage, Long pageSize, Long collectionId) {
+        Long skipNumber =(currentPage-1) * pageSize;
+        //根据收藏夹id获取推荐文章列表
+        ArticleListVo[] articleListVos= baseMapper.articleListByCollection(skipNumber,pageSize,collectionId);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+        CollectionEntity collection = collectionService.query().eq("id", collectionId).one();
+
+        CollectionInfoVo collectionInfoVo =new CollectionInfoVo();
+        collectionInfoVo.setCollection(collection);
+        collectionInfoVo.setArticleListVo(articleListVoPageVo);
+
+        return R.successResult(collectionInfoVo);
+    }
+
+    @Override
+    public R articleListByRelated(String articleTitle) {
+
+        ArticleListVo[] articleListVos= baseMapper.articleListByRelated(articleTitle);
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+        return R.successResult(articleListVos);
+    }
+
+    @Override
+    public R articleListByCategoryId(Long currentPage, Long pageSize, Long categoryId) {
+        Long skipNumber =(currentPage-1) * pageSize;
+
+
+        ArticleListVo[] articleListVos= baseMapper.articleListByCategoryId(skipNumber,pageSize,categoryId);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+        return R.successResult(articleListVoPageVo);
+    }
+
+    @Override
+    public R articleAuditList(Long currentPage, Long pageSize, String userName, Integer audit) {
+        Long userId=null;
+        if(ObjectUtil.isNotNull(userName)){
+            UserEntity user_name = userService.query().eq("user_name", userName).one();
+            if(ObjectUtil.isNotNull(user_name)){
+                userId=user_name.getId();
+            }else {
+                userId=0L;
+            }
+        }
+
+        Long skipNumber =(currentPage-1) * pageSize;
+        ArticleAudit[] articleAudit =baseMapper.articleAuditList(skipNumber,pageSize,userId,audit);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+
+        List<ArticleAudit> collect = Arrays.stream(articleAudit).collect(Collectors.toList());
+        PageVo<ArticleAudit> articleAuditPageVo = new PageVo<>(collect, total);
+
+
+        return R.successResult(articleAuditPageVo);
+    }
+
+    @Override
+    public R articleRecommend(Long id, String isTop) {
+        ArticleEntity articleEntity = new ArticleEntity();
+        articleEntity.setId(id);
+        articleEntity.setIsTop(isTop);
+        boolean b = updateById(articleEntity);
+        return R.successResult();
+    }
+
+    @Override
+    public R articleAudit(Long id, Integer audit) {
+        ArticleEntity articleEntity = new ArticleEntity();
+        articleEntity.setId(id);
+        articleEntity.setAudit(audit);
+        boolean b = updateById(articleEntity);
+        return R.successResult();
+    }
+
+    @Override
+    public R articleContent(Long id) {
+
+        ArticleEntity article = getById(id);
+
+        if(ObjectUtil.isNotNull(article)){
+            return R.successResult(article);
+        }else {
+            return R.errorResult(400,"该文章不存在不存在");
+        }
+
+
+    }
+
+    @Override
+    public R searchArticle(Long currentPage, Long pageSize, String searchParams) {
+
+        Long skipNumber =(currentPage-1) * pageSize;
+        ArticleListVo[] articleListVos = baseMapper.searchArticleList(skipNumber,pageSize,searchParams);
+        Arrays.stream(articleListVos).forEach(this::setTag);
+        Arrays.stream(articleListVos).forEach(this::setCommentCount);
+
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+        //转成list
+        List<ArticleListVo> articleListVos1 = Arrays.stream(articleListVos).collect(Collectors.toList());
+
+        PageVo<ArticleListVo> articleListVoPageVo = new PageVo<>(articleListVos1,total);
+
+
+
+
+        return R.successResult(articleListVoPageVo);
+
+    }
+
+    @Override
+    @Transactional
+    public R articleAndCommentCountInfo() {
+        WebSiteInfo webSiteInfo = new WebSiteInfo();
+        Integer articleCount = query().eq("del_flag" ,0) //获取总文章数
+                .eq("status",0)
+                .eq("audit",0)
+                .count();
+        Integer commentCount = commentService.query() //获取评论数
+                .eq("del_flag" ,0)
+                .eq("audit",0).count();
+
+        webSiteInfo.setArticleCount(articleCount);
+        webSiteInfo.setCommentCount(commentCount);
+
+        return R.successResult(webSiteInfo);
+    }
+
+
 
 
 }

@@ -21,7 +21,9 @@ import com.yfdl.mapper.UserMapper;
 import com.yfdl.utils.*;
 import com.yfdl.vo.*;
 import com.yfdl.vo.user.AuthorInfoByArticleDto;
+import com.yfdl.vo.user.UserArticleInfoVo;
 import com.yfdl.vo.user.UserInfoByHomePageVo;
+import com.yfdl.vo.user.UserListVo;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,10 +35,12 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 用户表(User)表服务实现类
@@ -469,7 +473,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         //获取文章被点赞数
         QueryWrapper<ArticleEntity> articleEntityQueryWrapper = new QueryWrapper<>();
-        articleEntityQueryWrapper.eq("create_time",userId)
+        articleEntityQueryWrapper.eq("create_by",userId)
                 .select("IFNULL(sum(view_count),0) as readCount");
 
         Map<String, Object> map = articleService.getMap(articleEntityQueryWrapper);
@@ -478,7 +482,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
         //获取文章被阅读数
         QueryWrapper<ArticleEntity> articleEntityQueryWrapper1 = new QueryWrapper<>();
-        articleEntityQueryWrapper1.eq("create_time",userId)
+        articleEntityQueryWrapper1.eq("create_by",userId)
                 .select("IFNULL(sum(likes_count),0) as likesCount");
 
         Map<String, Object> map1 = articleService.getMap(articleEntityQueryWrapper1);
@@ -610,6 +614,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
             return R.errorResult(400,"密码不正确,请重试!");
         }
 
+    }
+
+    @Override
+    public R searchUser(Long currentPage, Long pageSize, String searchParams) {
+
+        Long skipNumber =(currentPage-1) * pageSize;
+        UserListVo[] userList = baseMapper.searchUserList(skipNumber,pageSize,searchParams);
+
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+        //转成list
+        List<UserListVo> userListVos = Arrays.stream(userList).collect(Collectors.toList());
+
+        PageVo<UserListVo> userListVoPageVo = new PageVo<>(userListVos,total);
+
+        return R.successResult(userListVoPageVo);
+
+
+
+
+    }
+
+    @Override
+    public R userArticleInfo() {
+
+        Long userId = SecurityUtils.getUserId();
+
+       UserArticleInfoVo userArticleInfoVo= baseMapper.userArticleInfo(userId);
+
+        return R.successResult(userArticleInfoVo);
     }
 
 

@@ -30,6 +30,8 @@ public class TagEntity implements Serializable {
      */
     private String name;
 
+    private String spanIcon;
+
     @TableField(fill = FieldFill.INSERT)
     private Long createBy;
 

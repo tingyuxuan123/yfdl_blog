@@ -21,4 +21,8 @@ public interface TagService extends IService<TagEntity> {
     R updateTag(TagEntity tagEntity);
 
     R deleteTag(Long id);
+
+    R tagInfoById(Long tagId);
+
+    R articleInfoByTag();
 }

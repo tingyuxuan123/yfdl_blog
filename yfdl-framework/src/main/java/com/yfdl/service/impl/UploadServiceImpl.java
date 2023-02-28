@@ -34,7 +34,7 @@ public class UploadServiceImpl implements UploadService {
 
         //获取原始文件名
         String originalFilename = imgFile.getOriginalFilename();
-        if (!(originalFilename.endsWith(".png") || originalFilename.endsWith(".jpg") || originalFilename.endsWith(".jpeg"))){
+        if (!(originalFilename.endsWith(".png") || originalFilename.endsWith(".jpg") || originalFilename.endsWith(".jpeg") || originalFilename.endsWith(".awebp"))){
             throw  new SystemException(AppHttpCodeEnum.FILE_TYPE_ERROE);
         }
 

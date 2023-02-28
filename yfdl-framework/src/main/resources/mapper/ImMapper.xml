@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yfdl.mapper.ImMapper">
+    <select id="chatUserList" resultType="com.yfdl.vo.im.ChatUserListVo">
+        SELECT
+            id,
+            nick_name,
+            avatar
+        FROM
+            sys_user
+        WHERE
+            sys_user.id IN ( SELECT sg_im.to_id FROM sg_im WHERE sg_im.from_id =#{userId} )
+           OR sys_user.id IN ( SELECT sg_im.from_id FROM sg_im WHERE sg_im.to_id = #{userId} )
+    </select>
+    <select id="chatHistory" resultType="com.yfdl.entity.ImEntity">
+        SELECT
+            *
+        FROM sg_im
+        WHERE
+            from_id=#{userId} and to_id =#{toId}   OR from_id=#{toId} and  to_id =#{userId}
+    </select>
+</mapper>

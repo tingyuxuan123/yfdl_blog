@@ -29,4 +29,9 @@ public class CategoryController {
         return categoryService.getCategoryList();
     }
 
+    @GetMapping("getAllCategoryList")
+    public R<List<CategoryListVo>> getAllCategoryList(){
+        return categoryService.getAllCategoryList();
+    }
+
 }

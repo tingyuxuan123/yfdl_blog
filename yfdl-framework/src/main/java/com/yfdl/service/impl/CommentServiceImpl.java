@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yfdl.common.AppHttpCodeEnum;
 import com.yfdl.common.R;
 import com.yfdl.common.SystemException;
+import com.yfdl.entity.ArticleEntity;
 import com.yfdl.entity.LikesCommentEntity;
 import com.yfdl.entity.UserEntity;
 import com.yfdl.service.CommentService;
@@ -18,6 +19,8 @@ import com.yfdl.utils.BeanCopyUtils;
 import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.CommentVo;
 import com.yfdl.vo.PageVo;
+import com.yfdl.vo.article.ArticleAudit;
+import com.yfdl.vo.comment.CommentAuditVo;
 import io.jsonwebtoken.lang.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 评论表(Comment)表服务实现类
@@ -51,8 +56,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, CommentEntity
         commentEntityLambdaQueryWrapper.eq(!Objects.isNull(articleId),CommentEntity::getArticleId,articleId);
         // -1 代表根评论
         commentEntityLambdaQueryWrapper.eq(CommentEntity::getRootId,-1);
-
+        //要求的评论的类型
         commentEntityLambdaQueryWrapper.eq(CommentEntity::getType,commentType);
+
+        //获取待审核的评论和审核通过的评论 0为通过，1为待审核
+        commentEntityLambdaQueryWrapper.in(CommentEntity::getAudit,0,1);
+
 
         page(commentEntityPage,commentEntityLambdaQueryWrapper);
         List<CommentEntity> commentList = commentEntityPage.getRecords();
@@ -148,6 +157,30 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, CommentEntity
             }
         }
 
+        return R.successResult();
+    }
+
+    @Override
+    public R commentAuditList(Long currentPage, Long pageSize, String userName, Integer audit) {
+
+        Long skipNumber =(currentPage-1) * pageSize;
+        CommentAuditVo[] commentAuditList =baseMapper.commentAuditList(skipNumber,pageSize,userName,audit);
+        //获取复合条件的总数
+        Long total= baseMapper.getCount();
+
+        List<CommentAuditVo> collect = Arrays.stream(commentAuditList).collect(Collectors.toList());
+        PageVo<CommentAuditVo> commentAuditPageVo = new PageVo<>(collect, total);
+
+
+        return R.successResult(commentAuditPageVo);
+    }
+
+    @Override
+    public R commentAudit(Long id, Integer audit) {
+        CommentEntity commentEntity = new CommentEntity();
+        commentEntity.setId(id);
+        commentEntity.setAudit(audit);
+        updateById(commentEntity);
         return R.successResult();
     }
 

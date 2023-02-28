@@ -17,6 +17,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.catalina.User;
+import org.apiguardian.api.API;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -139,4 +140,15 @@ public class UserController {
     public R changePassword(@RequestBody ChangePasswordDto changePassword) {
         return userService.changePassword(changePassword);
     }
+
+    @ApiOperation("根据关键词搜索用户")
+    @GetMapping("searchUser")
+    public R searchArticle(@RequestParam(defaultValue = "1") Long currentPage,
+                           @RequestParam(defaultValue = "10") Long pageSize , @RequestParam String searchParams){
+
+        return userService.searchUser(currentPage,pageSize,searchParams);
+    }
+
+
+
 }

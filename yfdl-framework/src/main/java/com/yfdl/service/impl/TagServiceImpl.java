@@ -11,9 +11,11 @@ import com.yfdl.service.TagService;
 import com.yfdl.mapper.TagMapper;
 import com.yfdl.entity.TagEntity;
 import com.yfdl.utils.BeanCopyUtils;
+import com.yfdl.utils.SecurityUtils;
 import com.yfdl.vo.PageVo;
 import com.yfdl.vo.TagDetailListVo;
 import com.yfdl.vo.TagListVo;
+import com.yfdl.vo.tag.ArticleInfoByTagVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -49,10 +51,8 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, TagEntity> implements
         List<TagDetailListVo> tagDetailListVos = BeanCopyUtils.copyBeanList(tagEntityPage.getRecords(), TagDetailListVo.class);
 
         tagDetailListVos.stream().forEach(tagDetailListVo -> {
-            LambdaQueryWrapper<ArticleTagEntity> articleTagEntityLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            articleTagEntityLambdaQueryWrapper.eq(ArticleTagEntity::getTagId,tagDetailListVo.getId());
-            int count = articleTagService.count(articleTagEntityLambdaQueryWrapper);
-            tagDetailListVo.setArticleCount((long)count);
+            Long count =baseMapper.getArticleCountByTag(tagDetailListVo.getId());
+            tagDetailListVo.setArticleCount(count);
         });
 
         PageVo<TagDetailListVo> tagDetailListVoPageVo = new PageVo<>(tagDetailListVos, tagEntityPage.getTotal());
@@ -78,6 +78,28 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, TagEntity> implements
     public R deleteTag(Long id) {
         boolean b = removeById(id);
         return R.successResult();
+    }
+
+    @Override
+    public R tagInfoById(Long tagId) {
+
+        TagEntity tagEntity = getById(tagId);
+        TagDetailListVo tagDetailListVo = BeanCopyUtils.copyBean(tagEntity, TagDetailListVo.class);
+
+        Long count =baseMapper.getArticleCountByTag(tagId);
+        tagDetailListVo.setArticleCount(count);
+
+        return R.successResult(tagDetailListVo);
+    }
+
+    @Override
+    public R articleInfoByTag() {
+
+        Long userId = SecurityUtils.getUserId();
+
+        ArticleInfoByTagVo[] articleInfoByTagVo =baseMapper.articleInfoByTag(userId);
+
+        return R.successResult(articleInfoByTagVo);
     }
 
 

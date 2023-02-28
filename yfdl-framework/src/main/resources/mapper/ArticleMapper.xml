@@ -61,6 +61,7 @@
           AND sys_user.del_flag = 0
           AND sg_article.`status` = 0
           AND sg_category.del_flag =0
+          AND sg_article.audit= 0
         GROUP BY sg_article.id
         ORDER BY
             sg_article.create_time DESC
@@ -73,6 +74,7 @@
     </select>
     <select id="articleListByNew" resultType="com.yfdl.vo.ArticleListVo">
         SELECT
+            SQL_CALC_FOUND_ROWS
             sys_user.nick_name,
             sys_user.avatar,
             sg_article.id,
@@ -99,6 +101,7 @@
           AND sys_user.del_flag = 0
           AND sg_article.`status` = 0
           AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
         GROUP BY
             sg_article.id
         ORDER BY
@@ -107,6 +110,7 @@
     </select>
     <select id="articleAuditList" resultType="com.yfdl.vo.article.ArticleAudit">
         SELECT
+            SQL_CALC_FOUND_ROWS
             id,
             title,
             is_top,
@@ -116,11 +120,296 @@
         FROM
             sg_article
         WHERE
-            sg_article.`status` = 0
-          AND sg_article.audit = 1
-          AND del_flag =0
+        sg_article.`status` = 0
+        AND del_flag =0
+        <if test="userId!=null">
+            AND sg_article.create_by =#{userId}
+        </if>
+        <choose>
+            <when test="audit!=null">AND  sg_article.audit =#{audit}</when>
+            <otherwise>AND  sg_article.audit IN(1,2) </otherwise>
+        </choose>
         LIMIT #{skipNumber} , #{pageSize}
     </select>
 
+    <select id="searchArticleList" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+          AND (sg_article.title LIKE "%"#{searchParams}"%"
+            OR sg_article.summary LIKE "%"#{searchParams}"%" )
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            sg_article.create_time DESC
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
+    <select id="articleListByDynamic" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+          AND sg_article.create_by IN (SELECT follow_user_id from sg_follow WHERE sg_follow.user_id =#{userId} AND sg_follow.del_flag =0)
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            sg_article.create_time DESC
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
+    <select id="articleListByTag" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+          AND sg_article.id IN (
+            SELECT sg_article_tag.article_id FROM sg_article_tag
+            WHERE  sg_article_tag.tag_id = #{spanId}
+        )
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            sg_article.create_time DESC
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
+    <select id="adminAllArticleList" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+         <if test="title!=null || title!=''">
+            AND sg_article.title LIKE "%"#{title}"%"
+         </if>
+        <if test="categoryId!=null">
+            AND sg_article.category_id = #{categoryId}
+        </if>
+        <if test="spanId!=null">
+            AND sg_article.id IN (
+            SELECT sg_article_tag.article_id FROM sg_article_tag
+            WHERE  sg_article_tag.tag_id = #{spanId}
+            )
+        </if>
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            sg_article.create_time DESC
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
+    <select id="articleListByCollection" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+          AND sg_article.id IN(
+            SELECT sg_collect.article_id from sg_collect WHERE collection_id =#{collectionId} and del_flag=0
+        )
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            sg_article.create_time DESC
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
+    <select id="articleListByRelated" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+          AND MATCH(sg_article.title,sg_article.summary) AGAINST (#{articleTitle} IN NATURAL LANGUAGE MODE)
+          AND sg_article.title !=#{articleTitle}
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            MATCH(sg_article.title,sg_article.summary) AGAINST (#{articleTitle}) DESC,
+            sg_article.create_time DESC
+        LIMIT 0 , 5
+
+    </select>
+    <select id="articleListByCategoryId" resultType="com.yfdl.vo.ArticleListVo">
+        SELECT
+            SQL_CALC_FOUND_ROWS
+            sys_user.nick_name,
+            sys_user.avatar,
+            sg_article.id,
+            sg_article.title,
+            sg_article.summary,
+            sg_article.thumbnail,
+            sg_article.create_time,
+            sg_article.create_by,
+            sg_article.view_count,
+            sg_article.likes_count,
+            sg_category.`name` AS categoryName,
+            COUNT( sg_comment.article_id ) AS commentCount
+        FROM
+            sg_article
+                LEFT JOIN sg_comment ON sg_article.id = sg_comment.article_id,
+            sg_category,
+            sys_user,
+            sg_likes
+        WHERE
+            sg_article.create_by = sys_user.id
+          AND sg_article.category_id = sg_category.id
+          AND sg_likes.del_flag = 0
+          AND sg_article.del_flag = 0
+          AND sys_user.del_flag = 0
+          AND sg_article.`status` = 0
+          AND sg_category.del_flag = 0
+          AND sg_article.audit= 0
+          AND sg_category.id=#{categoryId}
+        GROUP BY
+            sg_article.id
+        ORDER BY
+            sg_article.create_time DESC
+        LIMIT #{skipNumber} , #{pageSize}
+    </select>
 
 </mapper>

@@ -54,4 +54,8 @@ public interface UserService extends IService<UserEntity> {
     R sendCodeNeedVerify(String email);
 
     R changePassword(ChangePasswordDto changePassword);
+
+    R searchUser(Long currentPage, Long pageSize, String searchParams);
+
+    R userArticleInfo();
 }

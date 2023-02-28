@@ -41,5 +41,27 @@ public interface ArticleService extends IService<ArticleEntity> {
 
     R articleListByNew(Long currentPage, Long pageSize);
 
-    R articleAuditList(Long currentPage, Long pageSize);
+    R articleAuditList(Long currentPage, Long pageSize, String userName, Integer audit);
+
+    R articleRecommend(Long id, String isTop);
+
+    R articleAudit(Long id, Integer audit);
+
+    R articleContent(Long id);
+
+    R searchArticle(Long currentPage, Long pageSize, String searchParams);
+
+    R articleAndCommentCountInfo();
+
+    R articleListByDynamic(Long currentPage, Long pageSize);
+
+    R articleListByTag(Long spanId, Long currentPage, Long pageSize);
+
+    R adminAllArticleList(String title, Long categoryId, Long spanId, Long currentPage, Long pageSize);
+
+    R articleListByCollection(Long currentPage, Long pageSize, Long collectionId);
+
+    R articleListByRelated(String articleTitle);
+
+    R articleListByCategoryId(Long currentPage, Long pageSize, Long categoryId);
 }

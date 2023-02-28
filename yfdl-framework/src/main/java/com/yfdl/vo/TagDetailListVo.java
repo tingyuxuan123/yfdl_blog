@@ -12,6 +12,11 @@ public class TagDetailListVo {
     private String name;
 
     /**
+     * 主题图片
+     */
+    private String spanIcon;
+
+    /**
      * 描述
      */
     private String remark;

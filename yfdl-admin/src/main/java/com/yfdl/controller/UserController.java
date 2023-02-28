@@ -131,4 +131,10 @@ public class UserController {
         return  userService.userList(currentPage,pageSize,userName,phonenumber,status);
     }
 
+    @ApiOperation("获取用户文章信息,需登录")
+    @GetMapping("/user/userArticleInfo")
+    public R userArticleInfo(){
+        return userService.userArticleInfo();
+    }
+
 }

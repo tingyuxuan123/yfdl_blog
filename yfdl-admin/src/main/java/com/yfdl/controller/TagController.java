@@ -4,6 +4,7 @@ import com.yfdl.common.R;
 import com.yfdl.entity.CategoryEntity;
 import com.yfdl.entity.TagEntity;
 import com.yfdl.service.TagService;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,5 +46,10 @@ public class TagController {
         return tagService.deleteTag(id);
     }
 
+    @GetMapping("articleInfoByTag")
+    @ApiOperation("获取文章概括根据标签")
+    public R articleInfoByTag(){
+        return  tagService.articleInfoByTag();
+    }
 
 }

@@ -11,6 +11,9 @@ public class HotArticleVo {
     private Long id;
     //标题
     private String title;
+
+    private String thumbnail;
+
     //访问量
     private Long viewCount;
 }

@@ -87,6 +87,8 @@ public class ArticleListVo {
      */
     private Long createBy;
 
+    private Integer audit;
+
 }
 
 
