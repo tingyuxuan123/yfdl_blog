@@ -80,22 +80,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      *
      */
 
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        //允许所有源
-        configuration.addAllowedOrigin("*");
-        //允许所有方法
-        configuration.addAllowedMethod("*");
-        //允许所有头
-        configuration.addAllowedHeader("*");
-        //允许带凭证
-        configuration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        //对所有url生效
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+//    @Bean
+//    CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration configuration = new CorsConfiguration();
+//        //允许所有源
+//        configuration.addAllowedOrigin("*");
+//        //允许所有方法
+//        configuration.addAllowedMethod("*");
+//        //允许所有头
+//        configuration.addAllowedHeader("*");
+//        //允许带凭证
+//        configuration.setAllowCredentials(true);
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        //对所有url生效
+//        source.registerCorsConfiguration("/**", configuration);
+//        return source;
+//    }
 
 
 }
