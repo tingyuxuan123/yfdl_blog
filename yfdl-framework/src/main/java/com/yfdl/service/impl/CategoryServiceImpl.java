@@ -64,7 +64,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, CategoryEnt
 
     @Override
     public R getAllCategoryList() {  //返回所有分类列表
-        List<CategoryEntity> list = list();
+        List<CategoryEntity> list = lambdaQuery().eq(CategoryEntity::getStatus, 0).list();
+
         List<CategoryListVo> categoryListVos = BeanCopyUtils.copyBeanList(list, CategoryListVo.class);
 
         return R.successResult(categoryListVos);

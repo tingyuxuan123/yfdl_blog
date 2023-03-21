@@ -125,10 +125,10 @@ public class UserController {
     public R userList(@RequestParam Long currentPage,
                       @RequestParam Long pageSize,
                       @RequestParam(required = false) String userName,
-                      @RequestParam(required = false) String phonenumber,
+                      @RequestParam(required = false) String email,
                       @RequestParam(required = false) String status ){
 
-        return  userService.userList(currentPage,pageSize,userName,phonenumber,status);
+        return  userService.userList(currentPage,pageSize,userName,email,status);
     }
 
     @ApiOperation("获取用户文章信息,需登录")

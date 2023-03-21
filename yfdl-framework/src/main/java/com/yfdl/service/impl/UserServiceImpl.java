@@ -209,11 +209,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     }
 
     @Override
-    public R userList(Long currentPage, Long pageSize, String userName, String phonenumber, String status) {
+    public R userList(Long currentPage, Long pageSize, String userName, String email, String status) {
 
         LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Objects.nonNull(userName),UserEntity::getUserName,userName);
-        queryWrapper.eq(Objects.nonNull(phonenumber),UserEntity::getPhonenumber,phonenumber);
+        queryWrapper.eq(Objects.nonNull(email),UserEntity::getEmail,email);
         queryWrapper.eq(Objects.nonNull(status),UserEntity::getStatus,status);
         Page<UserEntity> userEntityPage = new Page<>(currentPage,pageSize);
         page(userEntityPage,queryWrapper);
