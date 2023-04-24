@@ -24,14 +24,12 @@
             nick_name,
             avatar,
             label,
-            SUM( view_count ) AS readCount,
-            SUM( likes_count ) AS likesCount
+            IFNULL(SUM( view_count ),0) AS readCount,
+            IFNULL(SUM( likes_count ),0) AS likesCount
         FROM
-            sg_article,
-            sys_user
+            sys_user LEFT JOIN  sg_article on sys_user.id=sg_article.create_by
         WHERE
-            sg_article.create_by = sys_user.id
-          AND sys_user.del_flag =0
+          sys_user.del_flag =0
           AND  sys_user.nick_name LIKE "%"#{searchParams}"%"
         GROUP BY
             sys_user.id

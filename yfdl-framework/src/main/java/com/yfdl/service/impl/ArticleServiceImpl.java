@@ -109,6 +109,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             queryWrapper.eq(ArticleEntity::getStatus,'0');
         }
 
+        //只查询通过审核的文章
+        queryWrapper.eq(ArticleEntity::getAudit,0);
+
         //如果标题存在根据标题查询
         queryWrapper.like(Objects.nonNull(title),ArticleEntity::getTitle,title);
 
@@ -337,15 +340,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         ArticleEntity articleEntity = BeanCopyUtils.copyBean(articleDetailDto, ArticleEntity.class);
         //保存对应的标签
         List<Long> tags = articleDetailDto.getTags();
+        //保存文章
+        save(articleEntity);
+
         tags.stream().forEach(tag -> {
             ArticleTagEntity articleTagEntity = new ArticleTagEntity();
-            articleTagEntity.setArticleId(articleDetailDto.getId());
+            articleTagEntity.setArticleId(articleEntity.getId());
             articleTagEntity.setTagId(tag);
             articleTagService.save(articleTagEntity);
         });
 
-        //保存文章
-        save(articleEntity);
+
 
         return R.successResult();
     }
